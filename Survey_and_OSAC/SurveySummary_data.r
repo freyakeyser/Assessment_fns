@@ -89,7 +89,8 @@
 
 survey.data <- function(direct, direct_fns, yr.start = 1984, yr = as.numeric(format(Sys.time(), "%Y")) ,
                         surveys = "all", survey.year= NULL,preprocessed = F,un.ID=un.ID,pwd.ID=pwd.ID,db.con="ptran",
-                        season = "both",bins = "bank_default",testing = T,spatial = T, commercialsampling = T, mwsh.test = F, nickname)
+                        season = "both",bins = "bank_default",testing = T,spatial = T, commercialsampling = T, mwsh.test = F, nickname,
+                        size.cats="default")
 {  
   ##############################################################################################################
   ################################### SECTION 1 SECTION 1 SECTION 1 ############################################
@@ -220,8 +221,10 @@ survey.data <- function(direct, direct_fns, yr.start = 1984, yr = as.numeric(for
                             header=T,stringsAsFactors = F)
     
     #Read7 The boundary between Fully recruited and recruit size classes (RS = Recruit min, CS = Fully recruited (commercial) min)
-    size.cats <- read.csv(paste(direct,"data/Size_categories_by_bank_framework.csv",sep=""),
-                          header=T,stringsAsFactors = F)
+    if(size.cats=="default") size.cats <- read.csv(paste(direct,"data/Size_categories_by_bank.csv",sep=""),
+                                                   header=T,stringsAsFactors = F)
+    if(!size.cats=="default") size.cats <- read.csv(paste(direct,"data/", size.cats, sep=""),
+                                                    header=T,stringsAsFactors = F)
     
     ###############################################################################################################
     ################################## End LOAD FLAT FILES ################################## 
