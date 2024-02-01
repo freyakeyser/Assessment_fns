@@ -509,6 +509,8 @@ survey.data <- function(direct, direct_fns, yr.start = 1984, yr = as.numeric(for
   
   if(is.null(survey.year)) survey.year <- yr
   
+  if(all(is.na(all.surv.dat$month))) message("time change messed up date formatting; go to get.offshore.survey() and fix the ymd_hms lines")
+  
   # We only survey BBs from time to time (maybe never once Fundian Channel happens), so make sure we have BBs data for the year of interest
   #BBs.this.year <- nrow(all.surv.dat[all.surv.dat$surv.bank == "BBsspring" & all.surv.dat$year == survey.year,])
   # If there is no data remove BBs from the survey list and reduce the number of surveys accordingly
@@ -775,7 +777,7 @@ survey.data <- function(direct, direct_fns, yr.start = 1984, yr = as.numeric(for
       if((bnk == "Ger" || bnk == "Mid" || bnk=="Ban" ||bnk=="BanIce") && yr.start < 1985) years <- 1985:yr
       if(bnk == "Sab" && yr.start < 1986) years <- 1986:yr # The first year for Sable is causing issues with condFac model.
       # Looks like it is due to the lme part of the model predicting mw of 9.5 (rest of years more like 12-13)
-      
+    
       if(bnk == "BBs"  && yr.start < 1988) years <- c(1985,1986,1988:yr)
       if(bnk == "BBn"  && yr.start < 1991) years <- c(1991:yr)
       bank.dat[[bnk]] <- subset(bank.dat[[bnk]] , year %in% years)
