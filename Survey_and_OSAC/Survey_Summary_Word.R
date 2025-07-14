@@ -158,17 +158,18 @@ Survey_Summary_Word <- function(year=2017, reportseason="spring", subarea=F, dat
         # ifelse for the wording
     abundPT$word <- ifelse(abundPT$thisyear/abundPT$lastyear >  1.10,
                            "increased",
-                           ifelse(abundPT$thisyear/abundPT$lastyear < 0.90 & abundPT$thisyear/abundPT$lastyear > 0.10,
+                           ifelse(abundPT$thisyear/abundPT$lastyear < 0.90,# & abundPT$thisyear/abundPT$lastyear > 0.10,
                                   "decreased",
-                                  ifelse(abundPT$thisyear/abundPT$lastyear < 0.10 |
+                                  ifelse(#abundPT$thisyear/abundPT$lastyear < 0.10 |
                                            (abundPT$thisyear/abundPT$lastyear > 0.90 &
                                               abundPT$thisyear/abundPT$lastyear < 1.10),
                                          "similar", "other")))
+    
     abundPT$nearLTM <- ifelse(abundPT$thisyear/abundPT$LTM >  1.10,
                               "above",
-                              ifelse(abundPT$thisyear/abundPT$LTM < 0.90 & abundPT$thisyear/abundPT$LTM > 0.10,
+                              ifelse(abundPT$thisyear/abundPT$LTM < 0.90,# & abundPT$thisyear/abundPT$LTM > 0.10,
                                      "below",
-                                     ifelse(abundPT$thisyear/abundPT$LTM < 0.10 |
+                                     ifelse(#abundPT$thisyear/abundPT$LTM < 0.10 |
                                               (abundPT$thisyear/abundPT$LTM > 0.90 &
                                                  abundPT$thisyear/abundPT$LTM < 1.10),
                                             "near", "other")))
@@ -238,18 +239,18 @@ Survey_Summary_Word <- function(year=2017, reportseason="spring", subarea=F, dat
     # ifelse for the wording
     bmPT$word <- ifelse(bmPT$thisyear/bmPT$lastyear >  1.10,
                         "increased",
-                        ifelse(bmPT$thisyear/bmPT$lastyear < 0.90 & bmPT$thisyear/bmPT$lastyear > 0.10,
+                        ifelse(bmPT$thisyear/bmPT$lastyear < 0.90,# & bmPT$thisyear/bmPT$lastyear > 0.10,
                                "decreased",
-                               ifelse(bmPT$thisyear/bmPT$lastyear < 0.10 |
+                               ifelse(#bmPT$thisyear/bmPT$lastyear < 0.10 |
                                         (bmPT$thisyear/bmPT$lastyear > 0.90 &
                                            bmPT$thisyear/bmPT$lastyear < 1.10),
                                       "similar", "other")))
 
     bmPT$nearLTM <- ifelse(bmPT$thisyear/bmPT$LTM >  1.10,
                            "above",
-                           ifelse(bmPT$thisyear/bmPT$LTM < 0.90 & bmPT$thisyear/bmPT$LTM > 0.10,
+                           ifelse(bmPT$thisyear/bmPT$LTM < 0.90,# & bmPT$thisyear/bmPT$LTM > 0.10,
                                   "below",
-                                  ifelse(bmPT$thisyear/bmPT$LTM < 0.10 |
+                                  ifelse(#bmPT$thisyear/bmPT$LTM < 0.10 |
                                            (bmPT$thisyear/bmPT$LTM > 0.90 &
                                               bmPT$thisyear/bmPT$LTM < 1.10),
                                          "near", "other")))
@@ -478,7 +479,7 @@ if(banks[i] == "GB") mcreg <- fish.reg$MC_reg[fish.reg$Bank=="GBa" & fish.reg$ye
 
     if(banks[i] %in% "BBs"){
 
-      cf_ltm <- median(cfdat$CF[!is.na(cfdat$year)])
+      cf_ltm <- median(cfdat$CF[!is.na(cfdat$CF)])
 
       cf <- data.frame(variable=c("CF",
                                   "spatialCF",

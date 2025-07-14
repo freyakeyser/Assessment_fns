@@ -35,7 +35,8 @@
 
 
 simple.surv<-function(shf, years=1981:2008, B=T,user.bins = NULL){
-	
+	require(tidyverse)
+  
   shf$year <- as.numeric(shf$year)
 	# Number of data points each year
 	n<-with(shf,tapply(com,year,length))
@@ -52,7 +53,7 @@ simple.surv<-function(shf, years=1981:2008, B=T,user.bins = NULL){
 	NR.cv<-with(shf,tapply(rec,year,sd))/sqrt(n)/NR
 	# CV is sd/mean (old version had se/NPR). Note this is SE/mean!
 	NPR.cv<-with(shf,tapply(pre,year,sd))/sqrt(n)/NPR
-  
+
 	# If we want to do calculations on user specified bins
 	if(!is.null(user.bins))
 	{
@@ -76,21 +77,32 @@ simple.surv<-function(shf, years=1981:2008, B=T,user.bins = NULL){
 	      CV.names[i] <- paste0("CV_",user.bins[i-1],"_plus")
 	    } # end if(i == length(user.bins)+1) 
 	  } # End for(i in 1:length(user.bins)+1) 
+	  
 	  bnames <- c(bnames,paste0(bnames,"_bm"))
 	  mean.names <- c(mean.names,paste0(mean.names,"_bm"))
 	  CV.names <- c(CV.names,paste0(CV.names,"_bm"))
   # Pick the bin data I want
 	dat <- shf[,c(grep("year",names(shf)), grep("bin",names(shf)))]
 	# And then do the calculation to get the mean for each year
-	bin.means <- aggregate(.~year,FUN=mean,dat[,!colnames(dat) %in% names(which(sapply(dat, function(x) any(is.na(x)))))])
-  names(bin.means) <- gsub(x = names(bin.means), pattern="bin", replacement="mean")
+	# this excludes columns that contain NAs
+	bin.means <- dat %>%
+	  dplyr::group_by(year) %>%
+	  dplyr::summarize(across(where(is.numeric), function(x) mean(x, na.rm=T)))
+	names(bin.means) <- gsub(x = names(bin.means), pattern="bin", replacement="mean")
 	
 	# And now the CV's for each year
-	ns <- aggregate(.~year,FUN=length,dat[,!colnames(dat) %in% names(which(sapply(dat, function(x) any(is.na(x)))))]) # Using an SE/mean as per above so need the number of tows....
-	bin.CVs <- aggregate(.~year,FUN=sd,dat[,!colnames(dat) %in% names(which(sapply(dat, function(x) any(is.na(x)))))])/ns/bin.means
+	ns <- dat %>%
+	  dplyr::group_by(year) %>%
+	  dplyr::summarize(across(where(is.numeric), ~sum(!is.na(.))))
+	#ns <- aggregate(.~year,FUN=length,dat[,!colnames(dat) %in% names(which(sapply(dat, function(x) any(is.na(x)))))]) # Using an SE/mean as per above so need the number of tows....
+	#bin.CVs <- aggregate(.~year,FUN=sd,dat[,!colnames(dat) %in% names(which(sapply(dat, function(x) any(is.na(x)))))])/ns/bin.means
+	bin.CVs <- dat %>%
+	  dplyr::group_by(year) %>%
+	  dplyr::summarize(across(where(is.numeric), function(x) sd(x, na.rm=T)))/ns/bin.means
 	names(bin.CVs) <- gsub(x = names(bin.CVs), pattern="bin", replacement="CV")
 	bin.CVs <- bin.CVs[,-1]
 	bin.results <- as.data.frame(cbind(bin.means,bin.CVs))
+	
 	# Now convert the biomasses into grams to be consistent with the biomass calculations below, CV's are fine as is since it is scale invariant
 	mean.bm.nms <- mean.names[grep("bm",mean.names)] # Get the biomass names....
 	bin.results[,which(names(bin.results) %in% mean.bm.nms)] <-

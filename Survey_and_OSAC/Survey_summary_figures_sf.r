@@ -171,6 +171,8 @@ survey.figs <- function(plots = 'all', banks = "all" , yr = as.numeric(format(Sy
   require(sp) || stop("still need sp package for inla plots...")
   require(sf) || stop("It's 2020. We have entered the world of sf. ")
   require(dplyr) || stop("It's 2020. We have entered the world of dplyr. ")
+  require(tidyverse) || stop("It's 2020. We have entered the world of tidyverse ")
+  require(sdmTMB) || stop("It's 2025. We have entered the world of sdmTMB.")
   
   if(yr==2020) {
     message("Due to the pandemic, the 2020 survey was modified and lead by Industry. Only BBn, GBa, and GBb were surveyed.\n
@@ -766,7 +768,6 @@ for(fun in funs)
         # This section only needs run if we are running the INLA models
         if(length(grep("run",INLA)) > 0)
         {
-          
           # This is how the mesh and A matrix are constructed
           # Build the mesh, for our purposes I'm hopeful this should do the trick, should cover our entire survey area.
           cat("ALERT!  I'm building the mesh for",banks[i], "if this hangs here please try using a different offset for this bank.. \n")
@@ -778,7 +779,7 @@ for(fun in funs)
           if(banks[i] == "Ban") range <- 15 * 1000 ; max.edge <- range/5
           
           if(!banks[i] %in% c("GB","Ger", "Sab")) {
-            mesh2 <- sdmTMB::make_mesh(data = as.data.frame(st_coordinates(loc.sf)), 
+            mesh <- sdmTMB::make_mesh(data = as.data.frame(st_coordinates(loc.sf)), 
                                        xy_cols = c("X", "Y"), 
                                        fmesher_func = fmesher::fm_mesh_2d_inla,
                                        cutoff = 500, # minimum triangle edge length
@@ -788,7 +789,7 @@ for(fun in funs)
           
           if(banks[i] %in% c("GB","Ger")) {
             bound <- st_buffer(st_transform(bound.poly.surv.sf, 32619),dist = 1000)
-            mesh2 <- sdmTMB::make_mesh(data = as.data.frame(st_coordinates(loc.sf)), 
+            mesh <- sdmTMB::make_mesh(data = as.data.frame(st_coordinates(loc.sf)), 
                                      xy_cols = c("X", "Y"), 
                                      fmesher_func = fmesher::fm_mesh_2d_inla,
                                      boundary = inla.sp2segment(bound),
@@ -798,7 +799,7 @@ for(fun in funs)
           }
           if(banks[i] %in% c("Sab")) {
             bound <- st_buffer(st_transform(bound.poly.surv.sf, 32620),dist = 1000)
-            mesh2 <- sdmTMB::make_mesh(data = as.data.frame(st_coordinates(loc.sf)), 
+            mesh <- sdmTMB::make_mesh(data = as.data.frame(st_coordinates(loc.sf)), 
                                        xy_cols = c("X", "Y"), 
                                        fmesher_func = fmesher::fm_mesh_2d_inla,
                                        boundary = inla.sp2segment(bound),
@@ -806,11 +807,12 @@ for(fun in funs)
                                        max.edge = c(5000, 5000), # inner and outer max triangle lengths
                                        offset = c(5000, 5000)) # inner and outer border widths)
           }
-          mesh <- mesh2$mesh
+          #mesh <- mesh2$mesh
           # # Will this work for them all I wonder? Max edge should be around 1/5 of the range according to Zuur
           # mesh <- inla.mesh.2d(loc, boundary= inla.sp2segment(bound.poly.surv.sp), max.edge=c(1,5)*max.edge, cutoff=max.edge)
-          if(banks[i] %in% c("GBa","GBb","BBn","BBs","GB","Ger")) mesh$crs <- raster::crs(st_crs(32619)[[2]])
-          if(banks[i] %in% c("Mid","Sab","Ban","BanIce","SPB")) mesh$crs <- raster::crs(st_crs(32620)[[2]])
+          # if(banks[i] %in% c("GBa","GBb","BBn","GB","Ger")) mesh$crs <- raster::crs(st_crs(32619)[[2]])
+          # if(banks[i] %in% c("Mid","Sab","BBs")) mesh$crs <- raster::crs(st_crs(32620)[[2]])
+          # if(banks[i] %in% c("Ban","BanIce","SPB")) mesh$crs <- raster::crs(st_crs(32621)[[2]])
           plot(mesh) # For testing I want to plot this to see it and ensure it isn't crazy for the moment...
           #if(!banks[i] %in% c("GB", "Ban", "BanIce", "Sab")) mesh <- inla.mesh.2d(loc, boundary= inla.sp2segment(bound.poly.surv.sp), max.edge=c(1,5)*max.edge, cutoff=max.edge/1.5)
           #if(banks[i] == "GB") mesh <- inla.mesh.2d(loc, boundary=bound.buff, max.edge=c(0.04))
@@ -820,24 +822,25 @@ for(fun in funs)
           cat("Mesh successful, woot woot!!")
           # Now make the A matrix
           #
-          A <- inla.spde.make.A(mesh, loc)
-          if(banks[i] %in% c("GBa", "GBb")) A.cf <- inla.spde.make.A(mesh,loc.cf)
-          if(!banks[i] %in% c("GBa", "GBb")) A.cf <- A
           
-          # We can just make the one spde object for all of these as well.
-          spde <- inla.spde2.pcmatern(mesh,    
-                                      prior.sigma=c(2,0.5), # The probabiliy (second number) that the marginal standard deviation (first number) is larger than the first number
-                                      prior.range=c(range,0.5)) # The Meidan range and the probability that the range is less than this..
-          # Because of the generally thin spacing on GB we need to decrease the spatial correlation distance and allow for more spatial variability in the 
-          # data, so I have changed the priors...  Revised by DK August 2018, not fully incorporated into the Spring Survey summary presentation
-          # previous prior.range was c(1,0.5) (July 2018 spring survey summary used this value)
-          if(banks[i] %in% c("GB", "Sab"))
-          {
-            spde <- inla.spde2.pcmatern(mesh,    
-                                        prior.sigma=c(4,0.75), # The probabiliy that the marginal standard deviation (first number) is larger than second number
-                                        prior.range=c(range,0.5)) # The Meidan range and the probability that the range is less than this..
-          }
-          
+          # A <- inla.spde.make.A(mesh, loc)
+          # if(banks[i] %in% c("GBa", "GBb", "GB")) A.cf <- inla.spde.make.A(mesh,loc.cf)
+          # if(!banks[i] %in% c("GBa", "GBb", "GB")) A.cf <- A
+          # 
+          # # We can just make the one spde object for all of these as well.
+          # spde <- inla.spde2.pcmatern(mesh,    
+          #                             prior.sigma=c(2,0.5), # The probabiliy (second number) that the marginal standard deviation (first number) is larger than the first number
+          #                             prior.range=c(range,0.5)) # The Meidan range and the probability that the range is less than this..
+          # # Because of the generally thin spacing on GB we need to decrease the spatial correlation distance and allow for more spatial variability in the 
+          # # data, so I have changed the priors...  Revised by DK August 2018, not fully incorporated into the Spring Survey summary presentation
+          # # previous prior.range was c(1,0.5) (July 2018 spring survey summary used this value)
+          # if(banks[i] %in% c("GB", "Sab"))
+          # {
+          #   spde <- inla.spde2.pcmatern(mesh,    
+          #                               prior.sigma=c(4,0.75), # The probabiliy that the marginal standard deviation (first number) is larger than second number
+          #                               prior.range=c(range,0.5)) # The Meidan range and the probability that the range is less than this..
+          # }
+          # 
           ## All of our abundance spatial plots are counts
           family1 = "poisson"
           family1.cf <- "gaussian" # For CF, MC,MW, and SH they are more normal so go with a gaussian.
@@ -847,22 +850,21 @@ for(fun in funs)
           # low it just basically sets everything down toward 0.
           family.gp <- "lognormal" # This could use some more thought....
           
-          # but I need to truncate the predicted values that are > 100 to be 100 which is BS...
-          # As soon as you make a spatial model make your own intercept.  Here is
-          a0 <- 1 # intercept
-          # Mostly just using stock priors, again fine for our purposes for the moment.
-          #pcprec <- list(prior='pc.prec', param=c(0.5, 0.5))
-          # Add an index to the data
-          # The spatial model, simple model with a intercept (overall bank average) with the spde spatial component
-          # basically the random deviations for each piece of the mesh.
-          formula3 <- y ~ 0 + a0 + f(s, model=spde)
+          # # but I need to truncate the predicted values that are > 100 to be 100 which is BS...
+          # # As soon as you make a spatial model make your own intercept.  Here is
+          # a0 <- 1 # intercept
+          # # Mostly just using stock priors, again fine for our purposes for the moment.
+          # #pcprec <- list(prior='pc.prec', param=c(0.5, 0.5))
+          # # Add an index to the data
+          # # The spatial model, simple model with a intercept (overall bank average) with the spde spatial component
+          # # basically the random deviations for each piece of the mesh.
+          # formula3 <- y ~ 0 + a0 + f(s, model=spde)
           
           # if we have maps to be made and we aren't simply loading in the INLA results we need to run this bit.
           if(length(spatial.maps) > 0)
           {
-            
             # Get the data needed....
-            if(banks[i] %in% c("GBb","GBa")) 
+            if(banks[i] %in% c("GBb", "GBa")) 
             {
               tmp.dat <- dplyr::full_join(surv.Live[["GBa"]][surv.Live[["GBa"]]$year == yr,],surv.Live[["GBb"]][surv.Live[["GBb"]]$year == yr,])
               tmp.clap <- dplyr::full_join(surv.Clap[["GBa"]][surv.Clap[["GBa"]]$year == yr,],surv.Clap[["GBb"]][surv.Clap[["GBb"]]$year == yr,])
@@ -880,8 +882,10 @@ for(fun in funs)
               tmp.cf <-  CF.current[[banks[i]]][CF.current[[banks[i]]]$year == yr,]
               if(!banks[i] %in% "GBb") tmp.clap <- surv.Clap[[banks[i]]][surv.Clap[[banks[i]]]$year == yr,]
               if(!banks[i] == "BanIce") tmp.gp <- pot.grow[[banks[i]]][pot.grow[[banks[i]]]$year == yr,]
+              if(banks[i]=="GB") tmp.gp <- na.omit(pot.grow[[banks[i]]][pot.grow[[banks[i]]]$year == yr,])
             } # end if(banks[i] %in% c("Mid","Sab","Ger","BBn","BBs","Ban","BanIce","SPB","GB")) 
-            
+            tmp.dat <- cbind(tmp.dat, st_coordinates(loc.sf))
+
             # Now loop through each spatial map we want to make.
             fitted <- NULL
             for(k in 1:length(spatial.maps))
@@ -889,16 +893,52 @@ for(fun in funs)
               # In the next bunch of if statements we run the INLA model and we get the figure titles sorted out.
               if(spatial.maps[k] == "PR-spatial")    
               {
-                # This is the stack for estimation from the INLA model
-                stk <- inla.stack(tag="est",data=list(y = round(tmp.dat$pre,0), link=1L),
-                                  effects=list(data.frame(a0=rep(1, nrow(tmp.dat))), s = 1:spde$n.spde),
-                                  A = list(1, A))
-                # This is the INLA model itself
-                mod <- inla(formula3, family=family1, data = inla.stack.data(stk),
-                            control.predictor=list(A=inla.stack.A(stk),link=1L, compute=T))
+                browser()
+                # the model using sdmTMB
                 
-                fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.dat$pre)],
-                                                        dat=tmp.dat$pre)
+                fit_spatial <- sdmTMB(
+                  pre ~ 1, 
+                  data = tmp.dat,
+                  family = nbinom1(link="log"),
+                  mesh = mesh,
+                  spatial = "on")
+
+               sane <- sanity(fit_spatial)
+               
+               if(sum(unlist(sane))<7) {
+                  fit_spatial <- sdmTMB(
+                     pre ~ 1, 
+                     data = tmp.dat,
+                     family = tweedie(link="log"),
+                     mesh = mesh,
+                     spatial = "on")
+                  
+                  sane <- sanity(fit_spatial)
+                  
+                  if(sum(unlist(sane))<7) {
+                    fit_spatial <- sdmTMB(
+                      pre ~ 1, 
+                      data = tmp.dat,
+                      family = poisson(link="log"),
+                      mesh = mesh,
+                      spatial = "on")
+                    
+                    sane <- sanity(fit_spatial)
+            
+                    if(sum(unlist(sane))<7) {stop("sanity check failed for all three families attempted. I did my best, so now it's time to ask Dave.")}
+                  }
+                 }
+              
+               # # This is the stack for estimation from the INLA model
+               # stk <- inla.stack(tag="est",data=list(y = round(tmp.dat$pre,0), link=1L),
+               #                   effects=list(data.frame(a0=rep(1, nrow(tmp.dat))), s = 1:spde$n.spde),
+               #                   A = list(1, A))
+               # # This is the INLA model itself
+               # mod <- inla(formula3, family=family1, data = inla.stack.data(stk),
+               #             control.predictor=list(A=inla.stack.A(stk),link=1L, compute=T))
+               # 
+               # fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.dat$pre)],
+               #                                         dat=tmp.dat$pre)
               } # end if(spatial.maps[k] == "PR-spatial")   
               
               if(spatial.maps[k] == "Rec-spatial")        
@@ -1030,8 +1070,15 @@ for(fun in funs)
               
               
               if(spatial.maps[k] %in% c("FR-spatial","PR-spatial","Rec-spatial","SH-spatial","SH.GP-spatial",
-                                        "MW-spatial","MW.GP-spatial")) mod.res[[spatial.maps[k]]] <- 
-                  exp(mod$summary.random$s$mean + mod$summary.fixed$mean)
+                                        "MW-spatial","MW.GP-spatial")) {
+                bbox <- st_bbox(bound.poly.surv.sf)
+                newdata <- expand.grid(X=seq(floor(bbox$xmin), ceiling(bbox$xmax), 100), Y=seq(floor(bbox$ymin), ceiling(bbox$ymax), 100))
+
+                mod.res[[spatial.maps[k]]] <- predict(fit_spatial, newdata=newdata, type="response", se.fit=T)
+                
+                # mod.res[[spatial.maps[k]]] <- 
+                #   exp(mod$summary.random$s$mean + mod$summary.fixed$mean)
+              }
               
               # Now for the Gaussian models.
               if(spatial.maps[k] %in% c("CF-spatial","MC-spatial")) mod.res[[spatial.maps[k]]] <- 
@@ -1163,7 +1210,7 @@ for(fun in funs)
           x <- tryCatch(print(eval(parse(text = 'pecjector(area = banks[i],
                          plot = F,
                          repo = direct_fns, 
-                         c_sys = st_crs(mesh$crs)$epsg, 
+                         c_sys = st_crs(loc.sf)$epsg, 
                          quiet=T)'))), 
                         error = function(e) e)
           
@@ -1171,7 +1218,7 @@ for(fun in funs)
             p <- pecjector(area = banks[i], buffer=0.0001,
                            plot = F,
                            repo = direct_fns, 
-                           c_sys = st_crs(mesh$crs)$epsg, 
+                           c_sys = st_crs(loc.sf)$epsg, 
                            quiet=T,
                            add_layer = list(eez = 'eez', 
                                             sfa = 'offshore', 
@@ -1189,7 +1236,7 @@ for(fun in funs)
             p <- pecjector(area = banks[i], 
                            plot = F,
                            repo = direct_fns, 
-                           c_sys = st_crs(mesh$crs)$epsg, 
+                           c_sys = st_crs(loc.sf)$epsg, 
                            quiet=T,
                            add_layer = list(eez = 'eez', 
                                             sfa = 'offshore', 
@@ -1405,7 +1452,7 @@ for(fun in funs)
               if(maps.to.make[m] %in% c("MW.GP-spatial","MW-spatial","CF-spatial","MC-spatial")){
                 bound.poly.surv.sf <- st_difference(bound.poly.surv.sf, poly_to_add)
               }
-              
+              browser()
               if((banks[i] == "GBa" & !maps.to.make[m] %in% c("MW.GP-spatial","MW-spatial","CF-spatial","MC-spatial"))|
                  !banks[i]=="GBa"){
                 if(!st_geometry(bound.poly.surv.sf) == st_geometry(st_union(bound.poly.surv.sf, poly_to_add))){
@@ -1418,23 +1465,25 @@ for(fun in funs)
             #   load(paste0(direct,"Data/Survey_data/",yr,"/Survey_summary_output/",banks[i],"/",maps.to.make[m],".Rdata"))
             # }
             # 
+            browser()
             # Here we add our layer to the object above.  This is going to become a list so we can save it and modify it outside Figures.
             p2 <- pecjector(gg.obj = p, 
                             area = banks[i],
                             legend=T,
                             plot=F,
                             repo = direct_fns, 
-                            c_sys = st_crs(mesh$crs)$epsg,
-                            add_inla= list(field = mod.res[[maps.to.make[m]]],
-                                           mesh = mesh, 
+                            c_sys = st_crs(loc.sf)$epsg,
+                            add_inla= list(field = mod.res[maps.to.make[m]],
+                                           mesh = mesh,
                                            dims=s.res,
                                            clip = bound.poly.surv.sf,
                                            scale = list(scale = "discrete",
-                                                        breaks = base.lvls, 
+                                                        breaks = base.lvls,
                                                         palette = cols,
-                                                        leg.name=leg.title, 
+                                                        #leg.name=leg.title,
                                                         alpha=0.75))) +
-              geom_sf(data=bound.poly.surv.sf, colour="black", fill=NA) + coord_sf(expand=F)
+                            geom_sf(data=bound.poly.surv.sf, colour="black", fill=NA) + coord_sf(expand=F)
+                
         
            #plot(mesh)
            
@@ -1449,9 +1498,9 @@ for(fun in funs)
      
             if(maps.to.make[m] %in% c("PR-spatial", "Rec-spatial", "FR-spatial",bin.names, "SH-spatial", "SH.GP-spatial","Clap-spatial"))
             {
-              surv <- st_as_sf(surv.Live[[banks[i]]],coords = c('slon','slat'),crs = 4326,remove=F) %>% 
+             surv <- st_as_sf(surv.Live[[banks[i]]],coords = c('slon','slat'),crs = 4326,remove=F) %>% 
                 dplyr::filter(year == yr & state == 'live')
-              surv <- st_transform(surv,crs = st_crs(mesh$crs)$epsg)
+              surv <- st_transform(surv,crs = st_crs(loc.sf)$epsg)
               surv$`Tow type` <- paste0('regular (n = ',length(surv$random[surv$random==1]),")")
               if(banks[i] != 'Ger') surv$`Tow type`[surv$random != 1] <- paste0('exploratory (n = ',length(surv$random[surv$random!=1]),")")
               if(banks[i] == 'Ger') surv$`Tow type`[!surv$random %in% c(1,3)] <- paste0('exploratory (n = ',length(surv$random[!surv$random %in% c(1,3)]),")")
@@ -1471,14 +1520,14 @@ for(fun in funs)
             {
               if(banks[i]=="GBa") {
                 surv <- st_as_sf(CF.current[[banks[i]]],coords = c('lon','lat'),crs = 4326)
-                surv <- st_transform(surv,crs = st_crs(mesh$crs)$epsg)
+                surv <- st_transform(surv,crs = st_crs(loc.sf)$epsg)
                 surv$`Tow type` <- paste0('detailed (n = ',nrow(surv),")")
                 surv$shp<-21
               }
               if(!banks[i]=="GBa"){
                 surv <- st_as_sf(surv.Live[[banks[i]]],coords = c('slon','slat'),crs = 4326,remove=F) %>% 
                   dplyr::filter(year == yr & state == 'live')
-                surv <- st_transform(surv,crs = st_crs(mesh$crs)$epsg)
+                surv <- st_transform(surv,crs = st_crs(loc.sf)$epsg)
                 surv$`Tow type` <- paste0('regular (n = ',length(surv$random[surv$random==1]),")")
                 if(banks[i] != 'Ger') surv$`Tow type`[surv$random != 1] <- paste0('exploratory (n = ',length(surv$random[surv$random!=1]),")")
                 if(banks[i] == 'Ger') surv$`Tow type`[!surv$random %in% c(1,3)] <- paste0('exploratory (n = ',length(surv$random[!surv$random %in% c(1,3)]),")")
@@ -1920,7 +1969,7 @@ for(fun in funs)
       if(add.title == F) survey.ts.N.title <- ""
       if(fig == "screen") windows(8.5,11)
       
-      if(fig == "png")png(paste(plot.dir,"/abundance_ts.png",sep=""),units="in",
+      if(fig == "png")png(paste(plot.dir,"/abundance_ts_total.png",sep=""),units="in",
                           width = 8.5, height = 11,res=420,bg="transparent")
       if(fig == "pdf") pdf(paste(plot.dir,"/abundance_ts.pdf",sep=""),width = 8.5, height = 11)
       
@@ -1946,7 +1995,7 @@ for(fun in funs)
       
       if(banks[i] == "Mid" || banks[i] == "GB" || banks[i] == "Ban"|| banks[i] == "BanIce")
       {
-        if(!banks[i] == "BanIce")survey.ts(survey.obj[[banks[i]]][[1]],min(survey.obj[[banks[i]]][[1]]$year,na.rm=T):yr,Bank=banks[i],pdf=F, 
+        if(!banks[i] == "BanIce") survey.ts(survey.obj[[banks[i]]][[1]],min(survey.obj[[banks[i]]][[1]]$year,na.rm=T):yr,Bank=banks[i],pdf=F, 
                                            ht=6.5,wd=10,clr=c('blue',"blue","darkgrey"),se=F,pch=16,add.title=T,titl =survey.ts.N.title,cx.mn=3,axis.cx = 1.5)
         
         if(banks[i] == "BanIce")  survey.ts(survey.obj[[banks[i]]][[1]],Bank=banks[i],
@@ -2177,7 +2226,7 @@ for(fun in funs)
     
     #####   THE USER SPECIFIED BINS TIME SERIES FIGURES #####   #####   THE USER SPECIFIED BINS TIME SERIES FIGURES ##### 
     #####   THE USER SPECIFIED BINS TIME SERIES FIGURES #####   #####   THE USER SPECIFIED BINS TIME SERIES FIGURES ##### 
-    
+
     if(any(plots == "user.SH.bins"))
     {
       survey.ts.N.title <- substitute(bold(paste("Survey abundance time series (",bank,")",sep="")),
@@ -2242,7 +2291,7 @@ for(fun in funs)
       
       if(banks[i] == "Ger")
       {
-        survey.ts(survey.obj[[banks[i]]][[1]],min(survey.obj[[banks[i]]][[1]]$year,na.rm=T):yr,pdf=F,type='B', 
+        survey.ts(shf = survey.obj[[banks[i]]][[1]],min(survey.obj[[banks[i]]][[1]]$year,na.rm=T):yr,pdf=F,type='B', 
                   dat2=merged.survey.obj,clr=c('blue','red',"blue"),se=T,pch=c(16,17),ys=1.3,
                   add.title = T,titl = survey.ts.BM.title,cx.mn=3,axis.cx=1.5,user.bins=user.bins)
         legend("topright",c("unlined","lined"),pch=c(23,24),pt.bg = c("blue","red"),cex=1.4,lty=c(1,2),col=c("blue","red"),bty="n")
@@ -2660,6 +2709,8 @@ for(fun in funs)
       if(banks[i] != "GB") mc <- subset(fish.reg, year == yr & Bank %in% gsub(x=banks[i], "Ice", ""))$MC_reg
       if(banks[i] %in% spat.name) mc <- subset(fish.reg, year == yr & Bank %in% unique(spat.names$bank[spat.names$label == banks[i]]))$MC_reg
       if(banks[i] == "GB") mc <- fish.reg$MC_reg[fish.reg$Bank == "GBa"]
+      if(length(mc)==0) stop("Update the Fishery_regulations_by_bank.csv file with the meat counts and TACs for this year! You need them for the breakdown figures.")
+      
       if("years" %in% colnames(survey.obj[[banks[i]]]$shf.dat$w.yst)) {
         survey.obj[[banks[i]]]$shf.dat$w.yst <- survey.obj[[banks[i]]]$shf.dat$w.yst[,-which(colnames(survey.obj[[banks[i]]]$shf.dat$w.yst) == "years")]
       }
