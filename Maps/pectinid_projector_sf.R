@@ -1057,16 +1057,16 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
       extent(raster) <- c(range(projec$x),range(projec$y))
     }
     if(class(add_inla$mesh)=="sdmTMBmesh") {
-      inla.field <- add_inla$field[[1]]
+      inla.field <- add_inla$field
       raster <- inla.field[,c("X", "Y", "est")]
       raster <- rasterFromXYZ(raster)
     }
     
     # To convert a raster to a spatial polygon.is easy..
-    sp.field <- as(raster, "SpatialPolygonsDataFrame") 
+    sp.field <- as(raster, "SpatialPolygonsDataFrame") #10s
     proj4string(sp.field) <- add_inla$mesh$crs # For SP need that gross full crs code, so this...
     # Make it an sf object
-    spd <- st_as_sf(sp.field,as_points=F,merge=F)
+    spd <- st_as_sf(sp.field,as_points=F,merge=F) #10s
     # Now we need to convert to the coordinate system you want
     spd <- st_transform(spd,crs = c_sys)
     # If you want to clip the data to some coordinates/shape this is where that happens.

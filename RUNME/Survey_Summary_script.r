@@ -98,13 +98,13 @@ str <- Sys.time()
 survey.figs(direct = direct, direct_fns=direct_fns, fig="png",
             yr=2025, 
             banks = c(
-                    #"BBn",
-                  # "Ger",
-                #"Mid",
-                #"Sab",
+                   "BBn",
+                "Ger",
+                 "Mid",#to do user bins. crashed on mid pr-spatial due to crs
+                "Sab",
               #"GBa",
                 #"GBb"#,
-              #"GB",
+             "GB",
               "BBs"#,
               #"Ban",
               # "BanIce"
@@ -121,20 +121,20 @@ survey.figs(direct = direct, direct_fns=direct_fns, fig="png",
          #"clapper-per-ts"#,
          # "SH-MW-CF-ts",
          #"breakdown"#,
-             "PR-spatial"#,
-           #  "Rec-spatial",
-           # "FR-spatial",
-           #   "CF-spatial",
-           # "MC-spatial",
-           #  "Clap-spatial",
-           #   "MW-spatial", "SH-spatial",
-           #  "MW.GP-spatial",
-           #  "SH.GP-spatial"#,
+             "PR-spatial",
+             "Rec-spatial",
+            "FR-spatial",
+          "CF-spatial",
+            "MC-spatial",
+             "Clap-spatial",
+            "MW-spatial", "SH-spatial",
+           "MW.GP-spatial",
+          "SH.GP-spatial"#,
            # "SHF-large",
            # "seedboxes"
               ), 
             bathy=c(10,'c'), 
-            sub.area=F, INLA="run", season="testing", nickname="spring2025", layout="portrait")
+            sub.area=F, INLA="load", season="testing", nickname="spring2025", layout="portrait")
 
 
 Sys.time() -str

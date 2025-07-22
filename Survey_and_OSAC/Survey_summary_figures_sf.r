@@ -712,9 +712,9 @@ for(fun in funs)
           loc.sf <- st_as_sf(loc,coords = c('lon','lat'),crs = 4326)
           loc.sf <- st_transform(loc.sf,crs = 32620)
           loc    <- as(loc.sf,"Spatial")
-          loc.cf <- st_as_sf(loc.cf,coords = c('lon','lat'),crs = 4326)
-          loc.cf <- st_transform(loc.cf,crs = 32620)
-          loc.cf <- as(loc.cf,"Spatial")
+          loc.cf.sf <- st_as_sf(loc.cf,coords = c('lon','lat'),crs = 4326)
+          loc.cf.sf <- st_transform(loc.cf.sf,crs = 32620)
+          loc.cf <- as(loc.cf.sf,"Spatial")
           #bound.poly.surv.sp.buff <- spTransform(bound.poly.surv.sp.buff,CRS = st_crs(32620)[2]$proj4string)
           #bound.poly.surv.sp <- spTransform(bound.poly.surv.sp, CRSobj = st_crs(32620)[[2]])
           bound.poly.surv.sf <- st_transform(st_as_sf(bound.poly.surv.sp),crs = 32620)
@@ -725,9 +725,9 @@ for(fun in funs)
           loc.sf <- st_as_sf(loc,coords = c('lon','lat'),crs = 4326)
           loc.sf <- st_transform(loc.sf,crs = 32619)
           loc    <- as(loc.sf,"Spatial")
-          loc.cf <- st_as_sf(loc.cf,coords = c('lon','lat'),crs = 4326)
-          loc.cf <- st_transform(loc.cf,crs = 32619)
-          loc.cf <- as(loc.cf,"Spatial")
+          loc.cf.sf <- st_as_sf(loc.cf,coords = c('lon','lat'),crs = 4326)
+          loc.cf.sf <- st_transform(loc.cf.sf,crs = 32619)
+          loc.cf <- as(loc.cf.sf,"Spatial")
           # bound.poly.surv.sp <- spTransform(bound.poly.surv.sp, CRSobj = st_crs(32619)[[2]])
           bound.poly.surv.sf <- st_transform(st_as_sf(bound.poly.surv.sp),crs = 32619)
         }
@@ -779,33 +779,35 @@ for(fun in funs)
           if(banks[i] == "Ban") range <- 15 * 1000 ; max.edge <- range/5
           
           if(!banks[i] %in% c("GB","Ger", "Sab")) {
-            mesh <- sdmTMB::make_mesh(data = as.data.frame(st_coordinates(loc.sf)), 
+            mesh <- sdmTMB::make_mesh(data = as.data.frame(st_coordinates(loc.sf))/1000, 
                                        xy_cols = c("X", "Y"), 
                                        fmesher_func = fmesher::fm_mesh_2d_inla,
-                                       cutoff = 500, # minimum triangle edge length
-                                       max.edge = c(5000, 5000), # inner and outer max triangle lengths
-                                       offset = c(5000, 5000)) # inner and outer border widths)
+                                       cutoff = 0.5, # minimum triangle edge length
+                                       max.edge = c(5, 5), # inner and outer max triangle lengths
+                                       offset = c(5, 5)) # inner and outer border widths)
           }
           
           if(banks[i] %in% c("GB","Ger")) {
             bound <- st_buffer(st_transform(bound.poly.surv.sf, 32619),dist = 1000)
-            mesh <- sdmTMB::make_mesh(data = as.data.frame(st_coordinates(loc.sf)), 
+            st_geometry(bound) <- st_geometry(bound)/1000
+            mesh <- sdmTMB::make_mesh(data = as.data.frame(st_coordinates(loc.sf))/1000, 
                                      xy_cols = c("X", "Y"), 
                                      fmesher_func = fmesher::fm_mesh_2d_inla,
                                      boundary = inla.sp2segment(bound),
-                                     cutoff = 500, # minimum triangle edge length
-                                     max.edge = c(5000, 5000), # inner and outer max triangle lengths
-                                     offset = c(5000, 5000)) # inner and outer border widths)
+                                     cutoff = 0.5, # minimum triangle edge length
+                                     max.edge = c(5, 5), # inner and outer max triangle lengths
+                                     offset = c(5, 5)) # inner and outer border widths)
           }
           if(banks[i] %in% c("Sab")) {
             bound <- st_buffer(st_transform(bound.poly.surv.sf, 32620),dist = 1000)
-            mesh <- sdmTMB::make_mesh(data = as.data.frame(st_coordinates(loc.sf)), 
+            st_geometry(bound) <- st_geometry(bound)/1000
+            mesh <- sdmTMB::make_mesh(data = as.data.frame(st_coordinates(loc.sf))/1000, 
                                        xy_cols = c("X", "Y"), 
                                        fmesher_func = fmesher::fm_mesh_2d_inla,
                                        boundary = inla.sp2segment(bound),
-                                       cutoff = 500, # minimum triangle edge length
-                                       max.edge = c(5000, 5000), # inner and outer max triangle lengths
-                                       offset = c(5000, 5000)) # inner and outer border widths)
+                                       cutoff = 0.5, # minimum triangle edge length
+                                       max.edge = c(5, 5), # inner and outer max triangle lengths
+                                       offset = c(5, 5)) # inner and outer border widths)
           }
           #mesh <- mesh2$mesh
           # # Will this work for them all I wonder? Max edge should be around 1/5 of the range according to Zuur
@@ -884,7 +886,14 @@ for(fun in funs)
               if(!banks[i] == "BanIce") tmp.gp <- pot.grow[[banks[i]]][pot.grow[[banks[i]]]$year == yr,]
               if(banks[i]=="GB") tmp.gp <- na.omit(pot.grow[[banks[i]]][pot.grow[[banks[i]]]$year == yr,])
             } # end if(banks[i] %in% c("Mid","Sab","Ger","BBn","BBs","Ban","BanIce","SPB","GB")) 
-            tmp.dat <- cbind(tmp.dat, st_coordinates(loc.sf))
+            tmp.dat <- add_utm_columns(tmp.dat, c("lon", "lat"), utm_crs=st_crs(loc.sf))
+            tmp.cf <- add_utm_columns(tmp.cf, c("lon", "lat"), utm_crs=st_crs(loc.sf))
+            tmp.clap <- add_utm_columns(tmp.clap, c("lon", "lat"), utm_crs=st_crs(loc.sf))
+            tmp.gp <- left_join(tmp.dat[,c("tow", "X","Y")], tmp.gp)
+            
+            if(banks[i] %in% c("Mid", "GB")) {
+              tmp.cf <- tmp.dat
+            }
 
             # Now loop through each spatial map we want to make.
             fitted <- NULL
@@ -893,203 +902,490 @@ for(fun in funs)
               # In the next bunch of if statements we run the INLA model and we get the figure titles sorted out.
               if(spatial.maps[k] == "PR-spatial")    
               {
-                browser()
                 # the model using sdmTMB
-                
-                fit_spatial <- sdmTMB(
+                print('PR-spatial')
+                 fitted[[spatial.maps[k]]] <- sdmTMB(
                   pre ~ 1, 
                   data = tmp.dat,
                   family = nbinom1(link="log"),
                   mesh = mesh,
                   spatial = "on")
-
-               sane <- sanity(fit_spatial)
-               
-               if(sum(unlist(sane))<7) {
-                  fit_spatial <- sdmTMB(
-                     pre ~ 1, 
-                     data = tmp.dat,
-                     family = tweedie(link="log"),
-                     mesh = mesh,
-                     spatial = "on")
+                
+                sane <- sanity( fitted[[spatial.maps[k]]])
+                
+                if(sum(unlist(sane))<7) {
+                   fitted[[spatial.maps[k]]] <- sdmTMB(
+                    pre ~ 1, 
+                    data = tmp.dat,
+                    family = tweedie(link="log"),
+                    mesh = mesh,
+                    spatial = "on")
                   
-                  sane <- sanity(fit_spatial)
+                  sane <- sanity( fitted[[spatial.maps[k]]])
                   
                   if(sum(unlist(sane))<7) {
-                    fit_spatial <- sdmTMB(
+                     fitted[[spatial.maps[k]]] <- sdmTMB(
                       pre ~ 1, 
                       data = tmp.dat,
                       family = poisson(link="log"),
                       mesh = mesh,
                       spatial = "on")
                     
-                    sane <- sanity(fit_spatial)
-            
-                    if(sum(unlist(sane))<7) {stop("sanity check failed for all three families attempted. I did my best, so now it's time to ask Dave.")}
+                    sane <- sanity( fitted[[spatial.maps[k]]])
+                    
+                    if(sum(unlist(sane))<7) {stop(paste0("sanity check failed for all three families attempted (PR-spatial, ", banks[i],"). I did my best, so now it's time to ask Dave."))}
                   }
-                 }
-              
-               # # This is the stack for estimation from the INLA model
-               # stk <- inla.stack(tag="est",data=list(y = round(tmp.dat$pre,0), link=1L),
-               #                   effects=list(data.frame(a0=rep(1, nrow(tmp.dat))), s = 1:spde$n.spde),
-               #                   A = list(1, A))
-               # # This is the INLA model itself
-               # mod <- inla(formula3, family=family1, data = inla.stack.data(stk),
-               #             control.predictor=list(A=inla.stack.A(stk),link=1L, compute=T))
-               # 
-               # fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.dat$pre)],
-               #                                         dat=tmp.dat$pre)
+                }
+                
+                # # This is the stack for estimation from the INLA model
+                # stk <- inla.stack(tag="est",data=list(y = round(tmp.dat$pre,0), link=1L),
+                #                   effects=list(data.frame(a0=rep(1, nrow(tmp.dat))), s = 1:spde$n.spde),
+                #                   A = list(1, A))
+                # # This is the INLA model itself
+                # mod <- inla(formula3, family=family1, data = inla.stack.data(stk),
+                #             control.predictor=list(A=inla.stack.A(stk),link=1L, compute=T))
+                # 
+                # fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.dat$pre)],
+                #                                         dat=tmp.dat$pre)
               } # end if(spatial.maps[k] == "PR-spatial")   
               
               if(spatial.maps[k] == "Rec-spatial")        
               {
-                # This is the stack for the INLA model
-                stk <- inla.stack(tag="est",data=list(y = round(tmp.dat$rec,0), link=1L),
-                                  effects=list(a0 = rep(1, nrow(tmp.dat)), s = 1:spde$n.spde),
-                                  A = list(1, A))
-                # This is the INLA model itself
-                mod <- inla(formula3, family=family1, data = inla.stack.data(stk),#control.family= control.family1,
-                            control.predictor=list(A=inla.stack.A(stk),link=link, compute=TRUE))
-                fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.dat$rec)],
-                                                        dat=tmp.dat$rec)
+                # the model using sdmTMB
+                print('Rec-spatial')
+                 fitted[[spatial.maps[k]]] <- sdmTMB(
+                  rec ~ 1, 
+                  data = tmp.dat,
+                  family = nbinom1(link="log"),
+                  mesh = mesh,
+                  spatial = "on")
+                
+                sane <- sanity( fitted[[spatial.maps[k]]])
+                
+                if(sum(unlist(sane))<7) {
+                   fitted[[spatial.maps[k]]] <- sdmTMB(
+                    rec ~ 1, 
+                    data = tmp.dat,
+                    family = tweedie(link="log"),
+                    mesh = mesh,
+                    spatial = "on")
+                  
+                  sane <- sanity( fitted[[spatial.maps[k]]])
+                  
+                  if(sum(unlist(sane))<7) {
+                     fitted[[spatial.maps[k]]] <- sdmTMB(
+                      rec ~ 1, 
+                      data = tmp.dat,
+                      family = poisson(link="log"),
+                      mesh = mesh,
+                      spatial = "on")
+                    
+                    sane <- sanity( fitted[[spatial.maps[k]]])
+                    
+                    if(sum(unlist(sane))<7) {stop(paste0("sanity check failed for all three families attempted (Rec-spatial, ", banks[i],"). I did my best, so now it's time to ask Dave."))}
+                  }
+                }
+                
+                # # This is the stack for the INLA model
+                # stk <- inla.stack(tag="est",data=list(y = round(tmp.dat$rec,0), link=1L),
+                #                   effects=list(a0 = rep(1, nrow(tmp.dat)), s = 1:spde$n.spde),
+                #                   A = list(1, A))
+                # # This is the INLA model itself
+                # mod <- inla(formula3, family=family1, data = inla.stack.data(stk),#control.family= control.family1,
+                #             control.predictor=list(A=inla.stack.A(stk),link=link, compute=TRUE))
+                # fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.dat$rec)],
+                #                                         dat=tmp.dat$rec)
               } # end if(spatial.maps[k] == "Rec-spatial") 
               
               if(spatial.maps[k] == "FR-spatial") 
               {
+                # the model using sdmTMB
+                print('FR-spatial')
+                 fitted[[spatial.maps[k]]] <- sdmTMB(
+                  com ~ 1, 
+                  data = tmp.dat,
+                  family = nbinom1(link="log"),
+                  mesh = mesh,
+                  spatial = "on")
                 
-                # This is the stack for the INLA model
-                stk <- inla.stack(tag="est",data=list(y = round(tmp.dat$com,0), link=1L),
-                                  effects=list(a0 = rep(1, nrow(tmp.dat)), s = 1:spde$n.spde),
-                                  A = list(1, A))
-                #print(stk)
-                # This is the INLA model itself
-                mod <- inla(formula3, family=family1, data = inla.stack.data(stk),#control.family= control.family1,
-                            control.predictor=list(A=inla.stack.A(stk),link=link, compute=TRUE))
-                fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.dat$com)],
-                                                        dat=tmp.dat$com)
+                sane <- sanity( fitted[[spatial.maps[k]]])
+                
+                if(sum(unlist(sane))<7) {
+                   fitted[[spatial.maps[k]]] <- sdmTMB(
+                    com ~ 1, 
+                    data = tmp.dat,
+                    family = tweedie(link="log"),
+                    mesh = mesh,
+                    spatial = "on")
+                  
+                  sane <- sanity( fitted[[spatial.maps[k]]])
+                  
+                  if(sum(unlist(sane))<7) {
+                     fitted[[spatial.maps[k]]] <- sdmTMB(
+                      com ~ 1, 
+                      data = tmp.dat,
+                      family = poisson(link="log"),
+                      mesh = mesh,
+                      spatial = "on")
+                    
+                    sane <- sanity( fitted[[spatial.maps[k]]])
+                   
+                    if(sum(unlist(sane))<7) {
+                      warning(paste0("sanity check failed for all three families attempted (FR-spatial, ", banks[i],"). I did my best, so now it's time to ask Dave."))}
+                  }
+                }
+                # 
+                # # This is the stack for the INLA model
+                # stk <- inla.stack(tag="est",data=list(y = round(tmp.dat$com,0), link=1L),
+                #                   effects=list(a0 = rep(1, nrow(tmp.dat)), s = 1:spde$n.spde),
+                #                   A = list(1, A))
+                # #print(stk)
+                # # This is the INLA model itself
+                # mod <- inla(formula3, family=family1, data = inla.stack.data(stk),#control.family= control.family1,
+                #             control.predictor=list(A=inla.stack.A(stk),link=link, compute=TRUE))
+                # fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.dat$com)],
+                #                                         dat=tmp.dat$com)
               } # end if(spatial.maps[k] == "FR-spatial")
-              
+
               if(spatial.maps[k] == "CF-spatial")       
               {
-                # This is the stack for the INLA model
-                stk <- inla.stack(tag="est",data=list(y = tmp.cf$CF, link=1L),
-                                  effects=list(a0 = rep(1, nrow(tmp.cf)), s = 1:spde$n.spde),
-                                  A = list(1, A.cf))
-                # This is the INLA model itself
-                mod <- inla(formula3, family=family1.cf, data = inla.stack.data(stk),
-                            control.predictor=list(A=inla.stack.A(stk),link=link, compute=TRUE))
-                fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.cf$CF)],
-                                                        dat=tmp.cf$CF)
+                print('CF-spatial')
+                
+                fitted[[spatial.maps[k]]] <- sdmTMB(
+                  CF ~ 1, 
+                  data = tmp.cf,
+                  family = gaussian(),
+                  mesh = mesh,
+                  spatial = "on")
+                
+                sane <- sanity( fitted[[spatial.maps[k]]])
+                
+                if(sum(unlist(sane))<7) {
+                   fitted[[spatial.maps[k]]] <- sdmTMB(
+                    CF ~ 1, 
+                    data = tmp.cf,
+                    family = gaussian(link="log"),
+                    mesh = mesh,
+                    spatial = "on")
+                  
+                  sane <- sanity( fitted[[spatial.maps[k]]])
+                  if(sum(unlist(sane))<7 & (sane$hessian_ok ==F | sane$eigen_values_ok==F)) {
+                    stop(paste0("sanity check failed for all three families attempted (CF-spatial, ", banks[i],"). I did my best, so now it's time to ask Dave."))}
+                }
+                
+                # # This is the stack for the INLA model
+                # stk <- inla.stack(tag="est",data=list(y = tmp.cf$CF, link=1L),
+                #                   effects=list(a0 = rep(1, nrow(tmp.cf)), s = 1:spde$n.spde),
+                #                   A = list(1, A.cf))
+                # # This is the INLA model itself
+                # mod <- inla(formula3, family=family1.cf, data = inla.stack.data(stk),
+                #             control.predictor=list(A=inla.stack.A(stk),link=link, compute=TRUE))
+                # fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.cf$CF)],
+                #                                         dat=tmp.cf$CF)
               }
               # THis seems to be making sense...
               if(spatial.maps[k] == "MC-spatial")      
               {
-                # This is the stack for the INLA model
-                stk <- inla.stack(tag="est",data=list(y = tmp.cf$meat.count, link=1L),
-                                  effects=list(a0 = rep(1, nrow(tmp.cf)), s = 1:spde$n.spde),
-                                  A = list(1, A.cf))
-                # This is the INLA model itself
-                mod <- inla(formula3, family=family1.cf, data = inla.stack.data(stk),
-                            control.predictor=list(A=inla.stack.A(stk),link=link, compute=TRUE))
+                print('MC-spatial')
                 
-                fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.cf$meat.count)],
-                                                        dat=tmp.cf$meat.count)
+                fitted[[spatial.maps[k]]] <- sdmTMB(
+                  meat.count ~ 1, 
+                  data = tmp.cf,
+                  family = gaussian(),
+                  mesh = mesh,
+                  spatial = "on")
+                
+                sane <- sanity( fitted[[spatial.maps[k]]])
+                
+                if(sum(unlist(sane))<7) {
+                   fitted[[spatial.maps[k]]] <- sdmTMB(
+                    meat.count ~ 1, 
+                    data = tmp.cf,
+                    family = gaussian(link="log"),
+                    mesh = mesh,
+                    spatial = "on")
+                  
+                  sane <- sanity( fitted[[spatial.maps[k]]])
+                  if(sum(unlist(sane))<7 & (sane$hessian_ok ==F | sane$eigen_values_ok==F)) {stop(paste0("sanity check failed for all three families attempted (MC-spatial, ", banks[i],"). I did my best, so now it's time to ask Dave."))}
+                }
+                
+                # # This is the stack for the INLA model
+                # stk <- inla.stack(tag="est",data=list(y = tmp.cf$meat.count, link=1L),
+                #                   effects=list(a0 = rep(1, nrow(tmp.cf)), s = 1:spde$n.spde),
+                #                   A = list(1, A.cf))
+                # # This is the INLA model itself
+                # mod <- inla(formula3, family=family1.cf, data = inla.stack.data(stk),
+                #             control.predictor=list(A=inla.stack.A(stk),link=link, compute=TRUE))
+                # 
+                # fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.cf$meat.count)],
+                #                                         dat=tmp.cf$meat.count)
               } # end if(spatial.maps[k] == "MC-spatial") 
               
               if(spatial.maps[k] == "Clap-spatial")        
               {
-                # Beta transform
-                tmp.clap$clap.prop <- beta.transform(tmp.clap$clap.prop/100)
-                # This is the stack for the INLA model
-                stk <- inla.stack(tag="est",data=list(y = tmp.clap$clap.prop, link=1L),
-                                  effects=list(a0 = rep(1, nrow(tmp.clap)), s = 1:spde$n.spde),
-                                  A = list(1, A))
-                # This is the INLA model itself
-                mod <- inla(formula3, family=family.clap, data = inla.stack.data(stk),
-                            control.predictor=list(A=inla.stack.A(stk),link=link, compute=TRUE))
+                print('Clap-spatial')
                 
-                fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.clap$clap.prop)],
-                                                        dat=tmp.clap$clap.prop)
+                fitted[[spatial.maps[k]]] <- sdmTMB(
+                  clap.prop ~ 1, 
+                  data = tmp.clap,
+                  family = nbinom1(link="log"),
+                  mesh = mesh,
+                  spatial = "on")
+                
+                sane <- sanity( fitted[[spatial.maps[k]]])
+                
+                if(sum(unlist(sane))<7) {
+                  fitted[[spatial.maps[k]]] <- sdmTMB(
+                    clap.prop ~ 1, 
+                    data = tmp.clap,
+                    family = tweedie(link="log"),
+                    mesh = mesh,
+                    spatial = "on")
+                  
+                  sane <- sanity( fitted[[spatial.maps[k]]])
+                  
+                  if(sum(unlist(sane))<7) {
+                    fitted[[spatial.maps[k]]] <- sdmTMB(
+                      clap.prop ~ 1, 
+                      data = tmp.clap,
+                      family = poisson(link="log"),
+                      mesh = mesh,
+                      spatial = "on")
+                    
+                    sane <- sanity(fitted[[spatial.maps[k]]])
+                    
+                    if(sum(unlist(sane))<7 & (sane$hessian_ok ==F | sane$eigen_values_ok==F)) {stop(paste0("sanity check failed for all three families attempted (Clap-spatial, ", banks[i],"). I did my best, so now it's time to ask Dave."))}
+                  }
+                  
+                }
+                # # Beta transform
+                # tmp.clap$clap.prop <- beta.transform(tmp.clap$clap.prop/100)
+                # # This is the stack for the INLA model
+                # stk <- inla.stack(tag="est",data=list(y = tmp.clap$clap.prop, link=1L),
+                #                   effects=list(a0 = rep(1, nrow(tmp.clap)), s = 1:spde$n.spde),
+                #                   A = list(1, A))
+                # # This is the INLA model itself
+                # mod <- inla(formula3, family=family.clap, data = inla.stack.data(stk),
+                #             control.predictor=list(A=inla.stack.A(stk),link=link, compute=TRUE))
+                # 
+                # fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.clap$clap.prop)],
+                #                                         dat=tmp.clap$clap.prop)
               } # end if(spatial.maps[k] == "Clap-spatial")  
               
               if(spatial.maps[k] == "MW-spatial")    
               {
-                # This is the stack for estimation from the INLA model
-                stk <- inla.stack(tag="est",data=list(y = tmp.gp$cur.mw, link=1L),
-                                  effects=list(data.frame(a0=rep(1, nrow(tmp.gp))), s = 1:spde$n.spde),
-                                  A = list(1, A.cf))
-                # This is the INLA model itself
-                mod <- inla(formula3, family=family.gp, data = inla.stack.data(stk),
-                            control.predictor=list(A=inla.stack.A(stk),link=1L, compute=T))
+                print('MW-spatial')
                 
-                fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.gp$cur.mw)],
-                                                        dat= tmp.gp$cur.mw)
+                fitted[[spatial.maps[k]]] <- sdmTMB(
+                  cur.mw ~ 1, 
+                  data = tmp.gp,
+                  family = lognormal(),
+                  mesh = mesh,
+                  spatial = "on")
+                
+                sane <- sanity( fitted[[spatial.maps[k]]])
+                
+                if(sum(unlist(sane))<7 & (sane$hessian_ok ==F | sane$eigen_values_ok==F)) {
+                  fitted[[spatial.maps[k]]] <- sdmTMB(
+                    cur.mw ~ 1, 
+                    data = tmp.gp,
+                    family = gaussian(),
+                    mesh = mesh,
+                    spatial = "on")
+                  
+                  sane <- sanity( fitted[[spatial.maps[k]]])
+                  if(sum(unlist(sane))<7 & (sane$hessian_ok ==F | sane$eigen_values_ok==F)) {
+                    fitted[[spatial.maps[k]]] <- sdmTMB(
+                      cur.mw ~ 1, 
+                      data = tmp.gp,
+                      family = gaussian(link="log"),
+                      mesh = mesh,
+                      spatial = "on")
+                    
+                    sane <- sanity( fitted[[spatial.maps[k]]])
+                    if(sum(unlist(sane))<7) {
+                      if(sane$hessian_ok ==F | sane$eigen_values_ok==F){
+                        stop(paste0("sanity check failed for all three families attempted (MW-spatial, ", banks[i],"). I did my best, so now it's time to ask Dave."))
+                        }
+                    }
+                  }
+                }
+                # # This is the stack for estimation from the INLA model
+                # stk <- inla.stack(tag="est",data=list(y = tmp.gp$cur.mw, link=1L),
+                #                   effects=list(data.frame(a0=rep(1, nrow(tmp.gp))), s = 1:spde$n.spde),
+                #                   A = list(1, A.cf))
+                # # This is the INLA model itself
+                # mod <- inla(formula3, family=family.gp, data = inla.stack.data(stk),
+                #             control.predictor=list(A=inla.stack.A(stk),link=1L, compute=T))
+                # 
+                # fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.gp$cur.mw)],
+                #                                         dat= tmp.gp$cur.mw)
               } # end if(spatial.maps[k] == "PR-spatial")  
               
               if(spatial.maps[k] == "SH-spatial")    
               {
-                # This is the stack for estimation from the INLA model
-                stk <- inla.stack(tag="est",data=list(y = tmp.gp$cur.sh, link=1L),
-                                  effects=list(data.frame(a0=rep(1, nrow(tmp.gp))), s = 1:spde$n.spde),
-                                  A = list(1, A.cf))
-                # This is the INLA model itself
-                mod <- inla(formula3, family=family.gp, data = inla.stack.data(stk),
-                            control.predictor=list(A=inla.stack.A(stk),link=1L, compute=T))
+                print('SH-spatial')
                 
-                fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.gp$cur.sh)],
-                                                        dat= tmp.gp$cur.sh)
+                fitted[[spatial.maps[k]]] <- sdmTMB(
+                  cur.sh ~ 1, 
+                  data = tmp.gp,
+                  family = lognormal(),
+                  mesh = mesh,
+                  spatial = "on")
+                
+                sane <- sanity( fitted[[spatial.maps[k]]])
+                
+                if(sum(unlist(sane))<7 & (sane$hessian_ok ==F | sane$eigen_values_ok==F)) {
+                  fitted[[spatial.maps[k]]] <- sdmTMB(
+                    cur.sh ~ 1, 
+                    data = tmp.gp,
+                    family = gaussian(),
+                    mesh = mesh,
+                    spatial = "on")
+                  
+                  sane <- sanity( fitted[[spatial.maps[k]]])
+                  if(sum(unlist(sane))<7 & (sane$hessian_ok ==F | sane$eigen_values_ok==F)) {
+                    fitted[[spatial.maps[k]]] <- sdmTMB(
+                      cur.sh ~ 1, 
+                      data = tmp.gp,
+                      family = gaussian(link="log"),
+                      mesh = mesh,
+                      spatial = "on")
+                    
+                    sane <- sanity( fitted[[spatial.maps[k]]])
+                    if(sum(unlist(sane))<7) {
+                      if(sane$hessian_ok ==F | sane$eigen_values_ok==F){
+                        stop(paste0("sanity check failed for all three families attempted (SH-spatial, ", banks[i],"). I did my best, so now it's time to ask Dave."))}
+                    }
+                  }
+                }
+                # # This is the stack for estimation from the INLA model
+                # stk <- inla.stack(tag="est",data=list(y = tmp.gp$cur.sh, link=1L),
+                #                   effects=list(data.frame(a0=rep(1, nrow(tmp.gp))), s = 1:spde$n.spde),
+                #                   A = list(1, A.cf))
+                # # This is the INLA model itself
+                # mod <- inla(formula3, family=family.gp, data = inla.stack.data(stk),
+                #             control.predictor=list(A=inla.stack.A(stk),link=1L, compute=T))
+                # 
+                # fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.gp$cur.sh)],
+                #                                         dat= tmp.gp$cur.sh)
               } # end if(spatial.maps[k] == "PR-spatial")  
               
               if(spatial.maps[k] == "MW.GP-spatial")    
               {
-                # This is the stack for estimation from the INLA model
-                stk <- inla.stack(tag="est",data=list(y = tmp.gp$gp.mw, link=1L),
-                                  effects=list(data.frame(a0=rep(1, nrow(tmp.gp))), s = 1:spde$n.spde),
-                                  A = list(1, A.cf))
-                # This is the INLA model itself
-                mod <- inla(formula3, family=family.gp, data = inla.stack.data(stk),
-                            control.predictor=list(A=inla.stack.A(stk),link=1L, compute=T))
+                print('MW.GP-spatial')
                 
-                fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.gp$gp.mw)],
-                                                        dat= tmp.gp$gp.mw)
+                fitted[[spatial.maps[k]]] <- sdmTMB(
+                  gp.mw ~ 1, 
+                  data = tmp.gp,
+                  family = lognormal(),
+                  mesh = mesh,
+                  spatial = "on")
+                
+                sane <- sanity( fitted[[spatial.maps[k]]])
+                
+                if(sum(unlist(sane))<7 & (sane$hessian_ok ==F | sane$eigen_values_ok==F)) {
+                  fitted[[spatial.maps[k]]] <- sdmTMB(
+                    gp.mw ~ 1, 
+                    data = tmp.gp,
+                    family = gaussian(),
+                    mesh = mesh,
+                    spatial = "on")
+                  
+                  sane <- sanity( fitted[[spatial.maps[k]]])
+                  if(sum(unlist(sane))<7 & (sane$hessian_ok ==F | sane$eigen_values_ok==F)) {
+                    fitted[[spatial.maps[k]]] <- sdmTMB(
+                      gp.mw ~ 1, 
+                      data = tmp.gp,
+                      family = gaussian(link="log"),
+                      mesh = mesh,
+                      spatial = "on")
+                    
+                    sane <- sanity( fitted[[spatial.maps[k]]])
+                    if(sum(unlist(sane))<7) {
+                      if(sane$hessian_ok ==F | sane$eigen_values_ok==F){
+                      stop(paste0("sanity check failed for all three families attempted (MW.GP-spatial, ", banks[i],"). I did my best, so now it's time to ask Dave."))}
+                    }
+                  }
+                } 
+                # # This is the stack for estimation from the INLA model
+                # stk <- inla.stack(tag="est",data=list(y = tmp.gp$gp.mw, link=1L),
+                #                   effects=list(data.frame(a0=rep(1, nrow(tmp.gp))), s = 1:spde$n.spde),
+                #                   A = list(1, A.cf))
+                # # This is the INLA model itself
+                # mod <- inla(formula3, family=family.gp, data = inla.stack.data(stk),
+                #             control.predictor=list(A=inla.stack.A(stk),link=1L, compute=T))
+                # 
+                # fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.gp$gp.mw)],
+                #                                         dat= tmp.gp$gp.mw)
               } # end if(spatial.maps[k] == "PR-spatial")  
               
               if(spatial.maps[k] == "SH.GP-spatial")    
               {
-                # This is the stack for estimation from the INLA model
-                stk <- inla.stack(tag="est",data=list(y = tmp.gp$gp.sh, link=1L),
-                                  effects=list(data.frame(a0=rep(1, nrow(tmp.gp))), s = 1:spde$n.spde),
-                                  A = list(1, A.cf))
-                # This is the INLA model itself
-                mod <- inla(formula3, family=family.gp, data = inla.stack.data(stk),
-                            control.predictor=list(A=inla.stack.A(stk),link=1L, compute=T))
+                print('SH.GP-spatial')
                 
-                fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.gp$gp.sh)],
-                                                        dat= tmp.gp$gp.sh)
+                fitted[[spatial.maps[k]]] <- sdmTMB(
+                  gp.sh ~ 1, 
+                  data = tmp.gp,
+                  family = lognormal(),
+                  mesh = mesh,
+                  spatial = "on")
+                
+                sane <- sanity( fitted[[spatial.maps[k]]])
+                
+                if(sum(unlist(sane))<7 & (sane$hessian_ok ==F | sane$eigen_values_ok==F)) {
+                  fitted[[spatial.maps[k]]] <- sdmTMB(
+                    gp.sh ~ 1, 
+                    data = tmp.gp,
+                    family =gaussian(),
+                    mesh = mesh,
+                    spatial = "on")
+                  
+                  sane <- sanity( fitted[[spatial.maps[k]]])
+                  
+                  if(sum(unlist(sane))<7 & (sane$hessian_ok ==F | sane$eigen_values_ok==F)) {
+                    fitted[[spatial.maps[k]]] <- sdmTMB(
+                      gp.mw ~ 1, 
+                      data = tmp.gp,
+                      family =  gaussian(link="log"),
+                      mesh = mesh,
+                      spatial = "on")
+                    
+                    sane <- sanity( fitted[[spatial.maps[k]]])
+                    
+                    if(sum(unlist(sane))<7 & (sane$hessian_ok ==F | sane$eigen_values_ok==F)) {
+                      if(sane$hessian_ok ==F | sane$eigen_values_ok==F){
+                        stop(paste0("sanity check failed for all three families attempted (SH.GP-spatial, ", banks[i],"). I did my best, so now it's time to ask Dave."))}
+                    }
+                  }
+                }
+                # # This is the stack for estimation from the INLA model
+                # stk <- inla.stack(tag="est",data=list(y = tmp.gp$gp.sh, link=1L),
+                #                   effects=list(data.frame(a0=rep(1, nrow(tmp.gp))), s = 1:spde$n.spde),
+                #                   A = list(1, A.cf))
+                # # This is the INLA model itself
+                # mod <- inla(formula3, family=family.gp, data = inla.stack.data(stk),
+                #             control.predictor=list(A=inla.stack.A(stk),link=1L, compute=T))
+                # 
+                # fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.gp$gp.sh)],
+                #                                         dat= tmp.gp$gp.sh)
               } # end if(spatial.maps[k] == "SH.GP-spatial")  
               
-              
-              if(spatial.maps[k] %in% c("FR-spatial","PR-spatial","Rec-spatial","SH-spatial","SH.GP-spatial",
-                                        "MW-spatial","MW.GP-spatial")) {
                 bbox <- st_bbox(bound.poly.surv.sf)
-                newdata <- expand.grid(X=seq(floor(bbox$xmin), ceiling(bbox$xmax), 100), Y=seq(floor(bbox$ymin), ceiling(bbox$ymax), 100))
+                newdata <- expand.grid(X=seq(floor(bbox$xmin/1000), ceiling(bbox$xmax/1000), 0.1), Y=seq(floor(bbox$ymin/1000), ceiling(bbox$ymax/1000), 0.1))
 
-                mod.res[[spatial.maps[k]]] <- predict(fit_spatial, newdata=newdata, type="response", se.fit=T)
-                
+                mod.res[[spatial.maps[k]]] <- predict(fitted[[spatial.maps[k]]], newdata=newdata, type="response", se.fit=T)
+                mod.res[[spatial.maps[k]]]$X <-  mod.res[[spatial.maps[k]]]$X*1000
+                mod.res[[spatial.maps[k]]]$Y <-  mod.res[[spatial.maps[k]]]$Y*1000
                 # mod.res[[spatial.maps[k]]] <- 
                 #   exp(mod$summary.random$s$mean + mod$summary.fixed$mean)
-              }
-              
-              # Now for the Gaussian models.
-              if(spatial.maps[k] %in% c("CF-spatial","MC-spatial")) mod.res[[spatial.maps[k]]] <- 
-                  mod$summary.random$s$mean + mod$summary.fixed$mean
               
               # print a message if the model didn't work:
-              if(max(mod.res[[spatial.maps[k]]], na.rm=T) == "Inf") stop(paste0("Inf predictions in mod.res[[spatial.maps[k]]]. Please try a different mesh for ", banks[i], " ", spatial.maps[k], ".\nRecommend changing inla.mesh.2d max.edge argument very slightly."))
+              if(max(mod.res[[spatial.maps[k]]]$est, na.rm=T) == "Inf") stop(paste0("Inf predictions in mod.res[[spatial.maps[k]]]. Please try a different mesh for ", banks[i], " ", spatial.maps[k], ".\nRecommend changing inla.mesh.2d max.edge argument very slightly."))
               # Needed to make the clapper spatial work...
               
-              if(spatial.maps[k] == "Clap-spatial")  mod.res[[spatial.maps[k]]] <- inv.logit(mod$summary.random$s$mean + mod$summary.fixed$mean)*100
-              
+              # if(spatial.maps[k] == "Clap-spatial")  mod.res[[spatial.maps[k]]] <- inv.logit(mod$summary.random$s$mean + mod$summary.fixed$mean)*100
+              # 
               #
               #       if(spatial.maps[k] == "Clap-spatial")  mod.res[[spatial.maps[k]]][mod.res[[spatial.maps[k]]] > 100] <- 100
             } # end for(k in 1:length(spatial.maps)) # End the loop for getting all the data needed for a bank for the spatial maps.
@@ -1097,9 +1393,6 @@ for(fun in funs)
         } # end the if(length(grep("run",INLA)) > 0)
         print("finished running normal models")
         # #mod.res[[spatial.maps[k]]]
-        
-        
-        
         
         ############### IF I KEEP THIS IT WILL NEED TO MIRROR THE ABOVE FINAL PRODUCT!!
         ### The user shell height bins....
@@ -1140,18 +1433,82 @@ for(fun in funs)
             # Now run through each bin...
             for(k in 1:num.bins)
             {
+              print(bin.names[k])
+              
               # In the next bunch of if statements we run the INLA model and we get the figure titles sorted out.
               # This is the stack for the INLA model
-              pick <- which(names(tmp.dat) == bin.names[k])
-              stk <- inla.stack(tag="est",data=list(y = round(tmp.dat[,pick],0), link=1L),
-                                effects=list(a0 = rep(1, nrow(tmp.dat)), s = 1:spde$n.spde),
-                                A = list(1, A))
-              # This is the INLA model itself
-              mod <- inla(formula3, family=family1, data = inla.stack.data(stk),
-                          control.predictor=list(A=inla.stack.A(stk),link=link, compute=TRUE))
-              # Get the spatial field results that we need for pecjector later            
-              mod.res[[bin.names[k]]] <- exp(mod$summary.random$s$mean + mod$summary.fixed$mean)
+              pick <- which(names(tmp.dat) %in% c(bin.names[k], "lon", "lat"))
+              tmp.bin <- tmp.dat[,pick] %>%
+                st_as_sf(coords=c("lon", "lat"), crs=4326) %>%
+                st_transform(st_crs(loc.sf))
+              tmp.bin <- cbind(as.data.frame(tmp.bin), st_coordinates(tmp.bin)/1000)
+              names(tmp.bin)[1] <- "out"
               
+              fitted[[bin.names[k]]] <- sdmTMB(
+                out ~ 1, 
+                data = tmp.bin,
+                family = nbinom1(link="log"),
+                mesh = mesh,
+                spatial = "on")
+              
+              sane <- sanity(fitted[[bin.names[k]]])
+              
+              if(sum(unlist(sane))<7 & (sane$hessian_ok ==F | sane$eigen_values_ok==F)) {
+                fitted[[bin.names[k]]] <- sdmTMB(
+                  out ~ 1, 
+                  data = tmp.bin,
+                  family = poisson(link="log"),
+                  mesh = mesh,
+                  spatial = "on")
+                
+                sane <- sanity( fitted[[bin.names[k]]])
+                
+                if(sum(unlist(sane))<7 & (sane$hessian_ok ==F | sane$eigen_values_ok==F)) {
+                 x <- tryCatch(print(eval(parse(text = 'sdmTMB(
+                    out ~ 1, 
+                    data = tmp.bin,
+                    family = tweedie(link="log"),
+                    mesh = mesh,
+                    spatial = "on")'))), 
+                                error = function(e) e)
+                  
+                  if("error" %in% class(x)) {
+                    fitted[[bin.names[k]]]  <- NULL
+                    mod.res[[bin.names[k]]] <- NULL
+                  } 
+                  if(!"error" %in% class(x)) {
+                    fitted[[bin.names[k]]]  <- sdmTMB(
+                      out ~ 1, 
+                      data = tmp.bin,
+                      family = tweedie(link="log"),
+                      mesh = mesh,
+                      spatial = "on")
+                    
+                    if(sum(unlist(sane))<7) {
+                      warning(paste0("sanity check failed for all three families attempted (", bin.names[k], banks[i], "). I did my best, so now it's time to ask Dave."))
+                    }
+                    
+                  } 
+                }
+              }
+              bbox <- st_bbox(bound.poly.surv.sf)
+              newdata <- expand.grid(X=seq(floor(bbox$xmin/1000), ceiling(bbox$xmax/1000), 0.1), Y=seq(floor(bbox$ymin/1000), ceiling(bbox$ymax/1000), 0.1))
+              
+              if(!is.null(fitted[[bin.names[k]]])) {
+                mod.res[[bin.names[k]]] <- predict(fitted[[bin.names[k]]], newdata=newdata, type="response", se.fit=T)
+                mod.res[[bin.names[k]]]$X <-  mod.res[[bin.names[k]]]$X*1000
+                mod.res[[bin.names[k]]]$Y <-  mod.res[[bin.names[k]]]$Y*1000
+              }
+              
+              # stk <- inla.stack(tag="est",data=list(y = round(tmp.dat[,pick],0), link=1L),
+              #                   effects=list(a0 = rep(1, nrow(tmp.dat)), s = 1:spde$n.spde),
+              #                   A = list(1, A))
+              # # This is the INLA model itself
+              # mod <- inla(formula3, family=family1, data = inla.stack.data(stk),
+              #             control.predictor=list(A=inla.stack.A(stk),link=link, compute=TRUE))
+              # # Get the spatial field results that we need for pecjector later            
+              # mod.res[[bin.names[k]]] <- exp(mod$summary.random$s$mean + mod$summary.fixed$mean)
+              # 
               print(k)
             } # End for(k in 1:num.bins)
           } #end if(length(grep("run",INLA)) > 0)
@@ -1257,7 +1614,7 @@ for(fun in funs)
           
          # Initialize a counter...
           count = 0
-          #
+          
           # Make the maps...
           for(m in 1:n.maps)
           {
@@ -1296,12 +1653,12 @@ for(fun in funs)
             
             if(maps.to.make[m]  %in% c("CF-spatial"))   
             {
-              base.lvls <- c(0,5,8,10,12,14,16,18,max(c(20,ceiling(max(mod.res[[maps.to.make[m]]])))))
+              base.lvls <- c(0,5,8,10,12,14,16,18,max(c(20,ceiling(max(mod.res[[maps.to.make[m]]]$est)))))
               cols <- rev(viridis::inferno(length(base.lvls)-1,alpha=0.7,begin=0.35,end=1))
               # Get the levels correct add extra levels to this to get a better resolution if we have levels > 18
-              if(median(mod.res[[maps.to.make[m]]], na.rm=T) > 18) 
+              if(median(mod.res[[maps.to.make[m]]]$est, na.rm=T) > 18) 
               {
-                byextra <- pretty(max(base.lvls[-length(base.lvls)]):round(max(mod.res[[maps.to.make[m]]], na.rm=T)), n = 3)
+                byextra <- pretty(max(base.lvls[-length(base.lvls)]):round(max(mod.res[[maps.to.make[m]]]$est, na.rm=T)), n = 3)
                 extra.lvls <- byextra[-1]
                 # extra.lvls <- c(max(base.lvls[-length(base.lvls)]) + byextra, 
                 #                 max(base.lvls[-length(base.lvls)]) + byextra*2,  
@@ -1452,7 +1809,7 @@ for(fun in funs)
               if(maps.to.make[m] %in% c("MW.GP-spatial","MW-spatial","CF-spatial","MC-spatial")){
                 bound.poly.surv.sf <- st_difference(bound.poly.surv.sf, poly_to_add)
               }
-              browser()
+              
               if((banks[i] == "GBa" & !maps.to.make[m] %in% c("MW.GP-spatial","MW-spatial","CF-spatial","MC-spatial"))|
                  !banks[i]=="GBa"){
                 if(!st_geometry(bound.poly.surv.sf) == st_geometry(st_union(bound.poly.surv.sf, poly_to_add))){
@@ -1465,15 +1822,15 @@ for(fun in funs)
             #   load(paste0(direct,"Data/Survey_data/",yr,"/Survey_summary_output/",banks[i],"/",maps.to.make[m],".Rdata"))
             # }
             # 
-            browser()
             # Here we add our layer to the object above.  This is going to become a list so we can save it and modify it outside Figures.
+            
             p2 <- pecjector(gg.obj = p, 
                             area = banks[i],
                             legend=T,
                             plot=F,
                             repo = direct_fns, 
                             c_sys = st_crs(loc.sf)$epsg,
-                            add_inla= list(field = mod.res[maps.to.make[m]],
+                            add_inla= list(field = mod.res[[maps.to.make[m]]],
                                            mesh = mesh,
                                            dims=s.res,
                                            clip = bound.poly.surv.sf,
