@@ -326,6 +326,7 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
   } # end if(!is.null(add_EEZ)) 
   # Now grab the land, note we're using the rnaturalearth package now
   # We also want to get the land
+  
   if(any(layers == 'land'))
   {
     lnd <- add_layer$land
@@ -633,7 +634,7 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
       } # end if(add_sfas != "offshore")  
       
     }# end if(gis.repo = 'github')
-    
+
     # Now if you aren't using github do this...
     if(gis.repo != 'github')
     {
