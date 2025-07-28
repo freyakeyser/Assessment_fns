@@ -65,7 +65,6 @@ survey.ts <- function(shf, years=1981:2008, Bank='GBa', type = "N",pdf=F, plots=
                               clr=c(1,1,1), cx=1.2, pch=1:2, lty=1:2, wd=10, ht=8, Npt=T, se=F, ys=1.2, yl2=NULL, ymin=0, dat2=NULL, areas=NULL, areas2=NULL,
                               ypos=1, add.title = F, cx.mn = 1, titl = "", axis.cx=1,user.bins = NULL, log.y=F, ...)
 {
-  
   # Subset the data into the years of interest
   shf<-subset(shf,year %in% years)
   
@@ -131,7 +130,7 @@ survey.ts <- function(shf, years=1981:2008, Bank='GBa', type = "N",pdf=F, plots=
     mean.names <- c(mean.names,paste0(mean.names,"_bm"))
     CV.names <- c(CV.names,paste0(CV.names,"_bm"))
   } # end if(!is.null(user.bins))
-  
+
   # If we aren't using the user bins then we just grab the pre/rec/com data as requested
   if(is.null(user.bins)) 
   {
@@ -204,15 +203,14 @@ survey.ts <- function(shf, years=1981:2008, Bank='GBa', type = "N",pdf=F, plots=
   # The reverse puts them in order so that pre plots first if not making the user bin plots...
   if(is.null(user.bins)) mn.tmp <- names(shf)[rev(which(names(shf) %in% mean.names))]
   if(is.null(user.bins)) CV.tmp <- names(shf)[rev(which(names(shf) %in% CV.names))]
-
   # Get the names for the plots...
+
   plot.names <- NULL
   for(i in 1:length(mn.tmp))
   {
     # If we have user bins this is our naming convention
     if(!is.null(user.bins))
     {
-      #browser()
       if(i == 1) plot.names[[i]] <- substitute(paste(phantom(0),"<", a," mm",sep=""),list(a = user.bins[i]))
       if(i > 1 && i < length(mn.tmp)) plot.names[[i]] <- substitute(paste(a ,"-", b, " mm",sep=""),list(a = user.bins[i]-1,b=user.bins[i]-1))
       if(i == length(mn.tmp)) plot.names[[i]] <- substitute(paste(phantom(0)>= a, " mm",sep=""),list(a = user.bins[i]-1)) #phantom needed to make a leading math symbol...

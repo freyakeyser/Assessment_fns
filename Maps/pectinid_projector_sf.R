@@ -326,6 +326,7 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
   } # end if(!is.null(add_EEZ)) 
   # Now grab the land, note we're using the rnaturalearth package now
   # We also want to get the land
+  
   if(any(layers == 'land'))
   {
     lnd <- add_layer$land
@@ -633,7 +634,7 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
       } # end if(add_sfas != "offshore")  
       
     }# end if(gis.repo = 'github')
-    
+
     # Now if you aren't using github do this...
     if(gis.repo != 'github')
     {
@@ -835,7 +836,7 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
         if(grepl(".csv",add_custom$obj)) temp <- read.csv(add_custom$obj)
         if(grepl(".xls",add_custom$obj)) temp <- read_excel(add_custom$obj,sheet=1) # This will only pull in the first sheet, don't get fancy here
         temp <- as.PolySet(temp,projection = "LL") # I am assuming you provide Lat/Lon data and WGS84
-        browser()
+        
         temp <- PolySet2SpatialLines(temp) # Spatial lines is a bit more general (don't need to have boxes closed)
         custom <- st_as_sf(temp)
       } else { custom <- combo.shp(add_custom$obj,make.sf=T, quiet=quiet)}# If it doesn't then we assume we have a shapefile, if anything else this won't work.
@@ -1012,38 +1013,64 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
     {
       # If we have a value < 0 or that the maximum value of the mesh is < 180 I assume we are in lat/lon WGS84, which should be close at least for
       # anything in the maritime region.
-      if(min(add_inla$mesh$loc[,1]) < 0 || max(add_inla$mesh$loc[,1] < 180)) add_inla$mesh$crs <- mesh.csys <-  crs("+init=epsg:4326")
-      # If you have really big numbers I'm going for it being UTM, assuming you are doing something in the Maritimes this is fine...
-      if(max(add_inla$mesh$loc[,1]) > 20000) add_inla$mesh$crs <- mesh.csys <- crs("+init=epsg:32620")
-      # if I was successful in making a mesh warn the user if we automatically added a CRS to the mesh
-      if(exists("mesh.csys")) cat(paste0("Hello, local Programmer, You did not specify the mesh CRS, I used the coordinates in the mesh to take 
+      if(!class(add_inla$mesh) == "sdmTMBmesh"){
+        if(min(add_inla$mesh$loc[,1]) < 0 || max(add_inla$mesh$loc[,1] < 180)) add_inla$mesh$crs <- mesh.csys <-  crs("+init=epsg:4326")
+        # If you have really big numbers I'm going for it being UTM, assuming you are doing something in the Maritimes this is fine...
+        if(max(add_inla$mesh$loc[,1]) > 20000) add_inla$mesh$crs <- mesh.csys <- crs("+init=epsg:32620")
+        # if I was successful in making a mesh warn the user if we automatically added a CRS to the mesh
+        if(exists("mesh.csys")) cat(paste0("Hello, local Programmer, You did not specify the mesh CRS, I used the coordinates in the mesh to take 
                                                     a guess that the coordinate system is ", mesh.csys , " please confirm!!"))
-      # If not successful in making a mesh we shut er down.
-      if(!exists("mesh.csys")) cat(paste0("Hello, local Programmer, You did not specify the mesh CRS and I was unable to figure out what it should be, you'll
+        # If not successful in making a mesh we shut er down.
+        if(!exists("mesh.csys")) cat(paste0("Hello, local Programmer, You did not specify the mesh CRS and I was unable to figure out what it should be, you'll
                                            probably get an error before finishing reading this message, or maybe your plot will look dumb... 
                                            please fix and have a nice day!"))
+      }
+      if(class(add_inla$mesh) == "sdmTMBmesh"){
+        if(min(add_inla$mesh$loc_xy[,1]) < 0 || max(add_inla$mesh$loc_xy[,1] < 180)) add_inla$mesh$crs <- mesh.csys <-  crs("+init=epsg:4326")
+        # If you have really big numbers I'm going for it being UTM, assuming you are doing something in the Maritimes this is fine...
+        if(max(add_inla$mesh$loc_xy[,1]) > 20000) add_inla$mesh$crs <- mesh.csys <- crs("+init=epsg:32620")
+        if(exists("c_sys")) add_inla$mesh$crs <- mesh.csys <- crs(paste0("+init=epsg:", c_sys))
+        # if I was successful in making a mesh warn the user if we automatically added a CRS to the mesh
+        if(exists("mesh.csys")) cat(paste0("Hello, local Programmer, You did not specify the mesh CRS, I used the coordinates in the mesh to take 
+                                                    a guess that the coordinate system is ", mesh.csys , " please confirm!!"))
+        # If not successful in making a mesh we shut er down.
+        if(!exists("mesh.csys")) cat(paste0("Hello, local Programmer, You did not specify the mesh CRS and I was unable to figure out what it should be, you'll
+                                           probably get an error before finishing reading this message, or maybe your plot will look dumb... 
+                                           please fix and have a nice day!"))
+      }
     } # end  if(is.null(add_inla$mesh$crs)) 
     # Add in the dims option if that isn't there, low resolution to start.
     if(is.null(add_inla$dims)) add_inla$dims <- c(50,50)
     
     # Project the values appropriately for the data, the xlim/ylim will come from the mesh itself.
-    projec = inla.mesh.projector(add_inla$mesh, xlim = range(add_inla$mesh$loc[,1],na.rm=T) , ylim = range(add_inla$mesh$loc[,2],na.rm=T), dims=add_inla$dims)
-    if(add_inla$mesh$n == length(add_inla$field)) {
-      inla.field = inla.mesh.project(projec, add_inla$field)
+    if(!class(add_inla$mesh) == "sdmTMBmesh") {
+      projec = inla.mesh.projector(add_inla$mesh, xlim = range(add_inla$mesh$loc[,1],na.rm=T) , ylim = range(add_inla$mesh$loc[,2],na.rm=T), dims=add_inla$dims)
+      if(add_inla$mesh$n == length(add_inla$field)) {
+        inla.field = inla.mesh.project(projec, add_inla$field)
+      }
     }
     # If the above step has already happened (this is mostly for backwards compatibility with old code)....
-    if(add_inla$mesh$n != length(add_inla$field)) inla.field <- add_inla$field
-    raster <- raster(rotate(rotate(rotate(inla.field))))
-    extent(raster) <- c(range(projec$x),range(projec$y))
+    if(!class(add_inla$mesh)=="sdmTMBmesh") {
+      if(add_inla$mesh$n != length(add_inla$field)) {
+        inla.field <- add_inla$field
+      }
+      raster <- raster(rotate(rotate(rotate(inla.field))))
+      extent(raster) <- c(range(projec$x),range(projec$y))
+    }
+    if(class(add_inla$mesh)=="sdmTMBmesh") {
+      inla.field <- add_inla$field
+      raster <- inla.field[,c("X", "Y", "est")]
+      raster <- rasterFromXYZ(raster)
+    }
+    
     # To convert a raster to a spatial polygon.is easy..
-    sp.field <- as(raster, "SpatialPolygonsDataFrame") 
+    sp.field <- as(raster, "SpatialPolygonsDataFrame") #10s
     proj4string(sp.field) <- add_inla$mesh$crs # For SP need that gross full crs code, so this...
     # Make it an sf object
-    spd <- st_as_sf(sp.field,as_points=F,merge=F)
+    spd <- st_as_sf(sp.field,as_points=F,merge=F) #10s
     # Now we need to convert to the coordinate system you want
     spd <- st_transform(spd,crs = c_sys)
     # If you want to clip the data to some coordinates/shape this is where that happens.
-    
     if(!is.null(add_inla$clip))
     {
       # The clip has several options, you can use a local shapefile, or you can bring in a shapefile from a local directory
@@ -1066,7 +1093,8 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
     # Now to make the colour ramps...
     # First I'll make a couple of generic colour ramps 
     #I'll set one up using 100 colours and a maximium of 10 breaks, break locations based on the data.
-    
+    if(class(add_inla$mesh)=="sdmTMBmesh") spd$layer <- spd$est
+     
     if(!is.null(add_inla$scale$alpha))   {alph <- add_inla$scale$alpha}                   else alph <- 1
     if(!is.null(add_inla$scale$palette)) {col <- addalpha(add_inla$scale$palette,alph)}   else col <- addalpha(pals::viridis(100),alph)
     if(!is.null(add_inla$scale$limits))  {lims <- add_inla$scale$limits}                  else lims <- c(min(spd$layer,na.rm=T),max(spd$layer,na.rm=T))
@@ -1180,7 +1208,6 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
         ylab(NULL)
     }
   
-    
   # Now add in option to show axis labels in Deg-Min and Deg-Min-Sec if you want.
     if(!is.null(axes) | language == "french")
     {

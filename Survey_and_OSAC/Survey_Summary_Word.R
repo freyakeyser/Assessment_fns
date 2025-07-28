@@ -158,17 +158,18 @@ Survey_Summary_Word <- function(year=2017, reportseason="spring", subarea=F, dat
         # ifelse for the wording
     abundPT$word <- ifelse(abundPT$thisyear/abundPT$lastyear >  1.10,
                            "increased",
-                           ifelse(abundPT$thisyear/abundPT$lastyear < 0.90 & abundPT$thisyear/abundPT$lastyear > 0.10,
+                           ifelse(abundPT$thisyear/abundPT$lastyear < 0.90,# & abundPT$thisyear/abundPT$lastyear > 0.10,
                                   "decreased",
-                                  ifelse(abundPT$thisyear/abundPT$lastyear < 0.10 |
+                                  ifelse(#abundPT$thisyear/abundPT$lastyear < 0.10 |
                                            (abundPT$thisyear/abundPT$lastyear > 0.90 &
                                               abundPT$thisyear/abundPT$lastyear < 1.10),
                                          "similar", "other")))
+    
     abundPT$nearLTM <- ifelse(abundPT$thisyear/abundPT$LTM >  1.10,
                               "above",
-                              ifelse(abundPT$thisyear/abundPT$LTM < 0.90 & abundPT$thisyear/abundPT$LTM > 0.10,
+                              ifelse(abundPT$thisyear/abundPT$LTM < 0.90,# & abundPT$thisyear/abundPT$LTM > 0.10,
                                      "below",
-                                     ifelse(abundPT$thisyear/abundPT$LTM < 0.10 |
+                                     ifelse(#abundPT$thisyear/abundPT$LTM < 0.10 |
                                               (abundPT$thisyear/abundPT$LTM > 0.90 &
                                                  abundPT$thisyear/abundPT$LTM < 1.10),
                                             "near", "other")))
@@ -238,18 +239,18 @@ Survey_Summary_Word <- function(year=2017, reportseason="spring", subarea=F, dat
     # ifelse for the wording
     bmPT$word <- ifelse(bmPT$thisyear/bmPT$lastyear >  1.10,
                         "increased",
-                        ifelse(bmPT$thisyear/bmPT$lastyear < 0.90 & bmPT$thisyear/bmPT$lastyear > 0.10,
+                        ifelse(bmPT$thisyear/bmPT$lastyear < 0.90,# & bmPT$thisyear/bmPT$lastyear > 0.10,
                                "decreased",
-                               ifelse(bmPT$thisyear/bmPT$lastyear < 0.10 |
+                               ifelse(#bmPT$thisyear/bmPT$lastyear < 0.10 |
                                         (bmPT$thisyear/bmPT$lastyear > 0.90 &
                                            bmPT$thisyear/bmPT$lastyear < 1.10),
                                       "similar", "other")))
 
     bmPT$nearLTM <- ifelse(bmPT$thisyear/bmPT$LTM >  1.10,
                            "above",
-                           ifelse(bmPT$thisyear/bmPT$LTM < 0.90 & bmPT$thisyear/bmPT$LTM > 0.10,
+                           ifelse(bmPT$thisyear/bmPT$LTM < 0.90,# & bmPT$thisyear/bmPT$LTM > 0.10,
                                   "below",
-                                  ifelse(bmPT$thisyear/bmPT$LTM < 0.10 |
+                                  ifelse(#bmPT$thisyear/bmPT$LTM < 0.10 |
                                            (bmPT$thisyear/bmPT$LTM > 0.90 &
                                               bmPT$thisyear/bmPT$LTM < 1.10),
                                          "near", "other")))
@@ -261,11 +262,17 @@ Survey_Summary_Word <- function(year=2017, reportseason="spring", subarea=F, dat
 
     # shell height frequencies
     shcols <- paste0("h", 5:200)
-    shsummary <- apply(surv.Rand[banks[i]][[1]][surv.Rand[banks[i]][[1]]$year==year, which(names(surv.Rand[banks[i]][[1]]) %in% shcols)], 2, mean)
-    maxbin <- names(shsummary[shsummary==max(shsummary)])
+    if(banks[i] == "Ger") {
+      row <- which(lined.survey.obj$shf.dat$n.yst[,1]==year)
+      maxbin <- names(which.max(lined.survey.obj$shf.dat$n.yst[row, 2:ncol(lined.survey.obj$shf.dat$n.yst)]))
+    }
+    if(!banks[i] == "Ger") {
+      shsummary <- apply(surv.Rand[banks[i]][[1]][surv.Rand[banks[i]][[1]]$year==year, which(names(surv.Rand[banks[i]][[1]]) %in% shcols)], 2, mean)
+      maxbin <- names(shsummary[shsummary==max(shsummary)])
+    }
     maxbin <- gsub(x=maxbin, "h", "")
     maxbin <- paste0(as.numeric(maxbin)-5, "-", maxbin)
-    if(!banks[i] == "BBs"){
+    if(!banks[i] %in% c("BBs", "Ger")){
       shsummary_LY <- apply(surv.Rand[banks[i]][[1]][surv.Rand[banks[i]][[1]]$year==lastyear, which(names(surv.Rand[banks[i]][[1]]) %in% shcols)], 2, mean)
       maxbin_LY <- names(shsummary_LY[shsummary_LY==max(shsummary_LY)])
       maxbin_LY <- gsub(x=maxbin_LY, "h", "")
@@ -276,7 +283,13 @@ Survey_Summary_Word <- function(year=2017, reportseason="spring", subarea=F, dat
       maxbin_LY <- names(shsummary_LY[shsummary_LY==max(shsummary_LY)])
       maxbin_LY <- gsub(x=maxbin_LY, "h", "")
       maxbin_LY <- paste0(as.numeric(maxbin_LY)-5, "-", maxbin_LY)
-      }
+    }
+    if(banks[i] == "Ger") {
+      row <- which(lined.survey.obj$shf.dat$n.yst[,1]==lastyear)
+      maxbin_LY <- names(which.max(lined.survey.obj$shf.dat$n.yst[row, 2:ncol(lined.survey.obj$shf.dat$n.yst)]))
+      maxbin_LY <- gsub(x=maxbin_LY, "h", "")
+      maxbin_LY <- paste0(as.numeric(maxbin_LY)-5, "-", maxbin_LY)
+    }
 
     if(file.exists(paste0(direct, "Data/Survey_data/", year, "/Survey_summary_output/", banks[i], "_figures_res_250-250.Rdata"))){
       load(paste0(direct, "Data/Survey_data/", year, "/Survey_summary_output/", banks[i], "_figures_res_250-250.Rdata"))
@@ -478,7 +491,7 @@ if(banks[i] == "GB") mcreg <- fish.reg$MC_reg[fish.reg$Bank=="GBa" & fish.reg$ye
 
     if(banks[i] %in% "BBs"){
 
-      cf_ltm <- median(cfdat$CF[!is.na(cfdat$year)])
+      cf_ltm <- median(cfdat$CF[!is.na(cfdat$CF)])
 
       cf <- data.frame(variable=c("CF",
                                   "spatialCF",

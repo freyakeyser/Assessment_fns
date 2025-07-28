@@ -251,6 +251,7 @@ olex_import <- function(filename, ntows=NULL, type, length="sf", correction_fact
     banks <- as.data.frame(str_locate(pattern = look, string = filename))
     look <- look[which(!is.na(banks$start))]
     if(any(look == "GB")) look <- c(look,"GBa","GBb")
+    tnk_all <- tnk
     tnk <- tnk[tnk$Bank %in% look,]
     names(tnk)[which(names(tnk) == "olex_no")] <- "tow"
     trackpts <- left_join(trackpts, tnk)
@@ -272,9 +273,9 @@ olex_import <- function(filename, ntows=NULL, type, length="sf", correction_fact
       dplyr::select(Bank, Tow, Longitude, Latitude, Date_time)
     
     if(!is.null(tow_number_key)) {
-      names(tnk)[which(names(tnk) == "tow")] <- "Tow"
-      names(tnk)[which(names(tnk) == "Bank")] <- "bank"
-      tracks <- left_join(tracks, tnk)
+      names(tnk_all)[which(names(tnk_all) == "olex_no")] <- "Tow"
+      names(tnk_all)[which(names(tnk_all) == "Bank")] <- "bank"
+      tracks <- left_join(tracks, tnk_all)
       names(tracks)[which(names(tracks) == "tow_track_order")] <- "official_tow_number"
     }
     
