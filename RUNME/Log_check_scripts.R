@@ -12,7 +12,7 @@ direct <- "Y:/Offshore/Assessment/"
 #source(paste(direct_fns,"Fishery/log_error_checking.r",sep="")) #log_checks is function call
 
 ### if you want to use the official github version
-fun <- "https://raw.githubusercontent.com/Mar-scal/Assessment_fns/refs/heads/master/RUNME/Loading_to_scaloff_checks.R"
+fun <- "https://raw.githubusercontent.com/Mar-scal/Assessment_fns/refs/heads/master/Fishery/Log_error_checking.r"
 dir <- tempdir()
 temp <- dir
 download.file(fun,destfile = paste0(dir, "\\", basename(fun)))
