@@ -5,18 +5,25 @@
 direct <- "Y:/Offshore/Assessment/"
 
 ### for the code:
-### If you want to use the MASTER version:
+### If you want to use the version on sky:
 #direct_fns <- "Y:/Offshore/Assessment/Assessment_fns/"
 ### If you want to use a development version:
-direct_fns <- "C:/Users/keyserf/Documents/Github/Assessment_fns/"
+#direct_fns <- "C:/Users/keyserf/Documents/Github/Assessment_fns/"
+#source(paste(direct_fns,"Fishery/log_error_checking.r",sep="")) #log_checks is function call
 
-source(paste(direct_fns,"Fishery/log_error_checking.r",sep="")) #log_checks is function call
-log_checks(direct = direct, direct_fns = direct_fns, yrs = 2024, marfis=F, repo = "local",
+### if you want to use the official github version
+fun <- "https://raw.githubusercontent.com/Mar-scal/Assessment_fns/refs/heads/master/RUNME/Loading_to_scaloff_checks.R"
+dir <- tempdir()
+temp <- dir
+download.file(fun,destfile = paste0(dir, "\\", basename(fun)))
+source(paste0(dir,"/",basename(fun)))
+file.remove(paste0(dir,"/",basename(fun)))
+
+log_checks(direct = direct, direct_fns = direct_fns, yrs = 2025, marfis=F, repo = "github",
            #un="",pw="",db.con="ptran",db.lib = "RODBC",   #### Don't need this since marfis=F and repo="local"
-           export = NULL,
+           export = "fish.dat",
            bank = NULL, trips = NULL, dates = NULL, vrnum = NULL, tow.time = c(3,80), trip.tol = 1, 
            spatial = F, plot=F)
-
 
 # Important notes:
 # plot = "shiny" runs the shiny app
