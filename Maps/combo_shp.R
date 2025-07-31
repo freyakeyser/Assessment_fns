@@ -9,16 +9,16 @@
 combo.shp <- function(loc,make.sf = F,make.polys=F,make.lines =F, quiet=F)
 {
   require(sf)  || stop("You need to have the package 'sf'")
-  require(rgdal)  || stop("You need to have the package 'rgdal' or this won't work pal")
   # This gets the list of all the layers
-  lyr <- ogrListLayers(loc)
+  lyr <- list.files(loc)
+  lyr <- lyr[grep(x=lyr, pattern=".shp", fixed=T)]
   
   # Creates an object.
   my.shp <- NULL
   # Run this for each layer
   for (i in 1:length(lyr)) 
   {
-    my.shp[[i]] <- st_read(paste0(loc,"/",lyr[i], ".shp"), quiet=quiet)
+    my.shp[[i]] <- st_read(paste0(loc,"/",lyr[i]), quiet=quiet)
     my.shp[[i]] <- st_make_valid(my.shp[[i]])
     # If your shapefile doesn't have a CRS set it to 4326 and print a warning
     if(is.na(st_crs(my.shp[[i]]))) 
@@ -48,6 +48,7 @@ combo.shp <- function(loc,make.sf = F,make.polys=F,make.lines =F, quiet=F)
   # So this checks if the number of columns in the data is all the same, if so
   # they are easy to merge...
   num.cols <- unique(purrr::map_chr(my.shp, function(x) ncol(x)))
+  
   # The number of colums is not the same we need to clean up the data so we can merge them into one object
   # We should also spit a warning here...
   if(length(num.cols) > 1){

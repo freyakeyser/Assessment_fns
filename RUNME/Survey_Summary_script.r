@@ -20,11 +20,11 @@
 
 # Load your directory and the survey year
 #direct <- "d:/r/"
-#direct <- "C:/Users/keyserf/Documents/Version_control_pandemic/Offshore/Assessment/"
+#direct <- "C:/Users/keyserf/Documents/temp_data/"
 direct <- "Y:/Offshore/Assessment/"
 #direct_fns <- "C:/Documents/Assessment_fns/"
 direct_fns <- "C:/Users/keyserf/Documents/Github/Assessment_fns/"
-yr <- 2022
+yr <- 2025
 un.ID <- "ENTER UN HERE"
 pwd.ID <- "ENTER PW HERE"
 
@@ -58,17 +58,18 @@ res <- survey.data(direct = direct,
                    un.ID=un.ID, pwd.ID=pwd.ID, preprocessed=T, yr=yr,
                    surveys = c(#"Banspring", 
                     # #"BanIcespring", 
-                      "BBnspring",
-                      #"BBsspring",
-                      "Gerspring",
-                      "Midspring",
-                      "Sabspring",
-                      "GBspring",
-                        "GBbsummer",
-                        "GBasummer"
+                     #   "BBnspring",
+                     # "BBsspring",
+                     #   "Gerspring",
+                     #     "Midspring",
+                     #     "Sabspring",
+                     "GBspring"#,
+                           #  "GBbsummer",
+                           # "GBasummer"
                      ), 
-                   db.con="ptran",testing=F, season="both", spatial=T, mwsh.test=F,
-                   commercialsampling=T, nickname=NULL)
+                   db.con="ptran",testing=T, season="spring", spatial=F, mwsh.test=F,
+                   commercialsampling=T, nickname="spring2025", bins=c(50,65,85,95,120),
+                   size.cats="Size_categories_by_bank_75-90.csv")
 
 #res <- survey.data(direct = direct,un.ID=un.ID,pwd.ID=pwd.ID,preprocessed=T,yr=2016,
 #                   surveys =  c("BBnspring"),
@@ -95,45 +96,46 @@ source(paste(direct_fns,"Survey_and_OSAC/Survey_summary_figures_sf.r",sep="")) #
 
 str <- Sys.time()
 survey.figs(direct = direct, direct_fns=direct_fns, fig="png",
-            yr=2022, 
+            yr=2025, 
             banks = c(
-                  "BBn",
-                   "Ger",
-                "Mid",
+                   "BBn",
+               "Ger",
+               "Mid",
                "Sab",
-              "GBa",
-              "GBb",
-              "GB"#,
-              #"BBs"#,
+              #"GBa",
+                #"GBb"#,
+             "GB",
+             "BBs"#,
               #"Ban",
               # "BanIce"
             ),
             s.res="high",
-            plots = c(
-               # "Survey",
-               #  "abund-ts",
-               #  "biomass-ts",
-               #   "SHF",
-               #   "user.SH.bins",
-                 "MW-SH"#,
-              #   "clapper-abund-ts",
-              #   "clapper-per-ts",
-              #   "SH-MW-CF-ts",
-               #  "breakdown",
-              #       "PR-spatial",
-              #      "Rec-spatial",
-              #      "FR-spatial",
-               #   "CF-spatial"#,
-              #     "MC-spatial",
-              #     "Clap-spatial"#,
-              #      "MW-spatial", "SH-spatial",
-              #   "MW.GP-spatial",
-              #     "SH.GP-spatial",
-              #   "SHF-large",
-              # "seedboxes"
+             plots = c(
+         #"Survey",
+         #"abund-ts"#,
+         #"biomass-ts",
+         #"SHF",
+         #"user.SH.bins"#,
+         #"MW-SH"#,
+         #"clapper-abund-ts",
+         #"clapper-per-ts"#,
+         # "SH-MW-CF-ts",
+         # #"breakdown"#,
+         #      "PR-spatial",
+         #      "Rec-spatial",
+         #    "FR-spatial",
+         #   "CF-spatial",
+         #     "MC-spatial",
+            #  "Clap-spatial"#,
+           # "MW-spatial", "SH-spatial",
+          #  "MW.GP-spatial",
+          # "SH.GP-spatial"#,
+            "SHF-large"#,
+           # "seedboxes"
               ), 
             bathy=c(10,'c'), 
-            sub.area=F, INLA="load", season="testing", nickname="commercial", layout="landscape")
+            sub.area=F, INLA="load", season="testing", nickname="spring2025", layout="portrait")
+
 
 Sys.time() -str
 

@@ -69,12 +69,14 @@ if(missing(direct_fns))
             "https://raw.githubusercontent.com/Mar-Scal/Assessment_fns/master/Fishery/meat.count.table.r",
             "https://raw.githubusercontent.com/Mar-Scal/Assessment_fns/master/Maps/ScallopMap.r")
   # Now run through a quick loop to load each one, just be sure that your working directory is read/write!
-  for(fun in funs) 
-  {
-    download.file(fun,destfile = basename(fun))
-    source(paste0(getwd(),"/",basename(fun)))
-    file.remove(paste0(getwd(),"/",basename(fun)))
-  } # end for(fun in funs)
+dir <- tempdir()
+for(fun in funs) 
+{
+  temp <- dir
+  download.file(fun,destfile = paste0(dir, "\\", basename(fun)))
+  source(paste0(dir,"/",basename(fun)))
+  file.remove(paste0(dir,"/",basename(fun)))
+} # end for(fun in funs)
 }# end if(missing(direct_fns))  
   
   
@@ -109,9 +111,11 @@ if(!is.null(bank))
   #                 in this document, though the fishery data may not be the latest 
   # This trick is needed because we don't have the Survey_all_results.Rdata file before 2015 (though it contains everything we want!)
   direct1 <- direct
+  direct2 <- direct_fns
   if(yr <= 2015) load(paste(direct,"Data/Survey_data/2015/Survey_summary_output/Survey_all_results.Rdata",sep=""))  
   if(yr > 2015) load(paste(direct,"Data/Survey_data/",yr,"/Survey_summary_output/Survey_all_results.Rdata",sep=""))  
   direct <- direct1
+  direct_fns <- direct2
   bnk <- bank # Reset the bank and year info
   years <- years.t
   yr <- max(years)
@@ -132,6 +136,7 @@ if(!is.null(bank))
   # If you want the figures saved as image files make sure "save.fig=T" and also make sure the directories for the current year exist
   #  exist.
   # This object also contains the catch in each cell for each bank...
+  #browser()
   print("fishery_figures")
   
   bank.spatial <- fishery_figures(fish.dat=fish.dat,bnk=bnk,max.date=mx.dt,direct=direct, direct_fns = direct_fns,poly.brd=poly.brd,

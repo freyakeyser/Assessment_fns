@@ -65,10 +65,10 @@ survey.ts <- function(shf, years=1981:2008, Bank='GBa', type = "N",pdf=F, plots=
                               clr=c(1,1,1), cx=1.2, pch=1:2, lty=1:2, wd=10, ht=8, Npt=T, se=F, ys=1.2, yl2=NULL, ymin=0, dat2=NULL, areas=NULL, areas2=NULL,
                               ypos=1, add.title = F, cx.mn = 1, titl = "", axis.cx=1,user.bins = NULL, log.y=F, ...)
 {
-
   # Subset the data into the years of interest
   shf<-subset(shf,year %in% years)
-  # Get the current years RS and CS for the bank, this is slighly dis-engenious for GB since we actually calculate the biomass for the RS/CS
+  
+  # Get the current years RS and CS for the bank, this is slightly disingenuous for GB since we actually calculate the biomass for the RS/CS
   # for a given year and this has changed over time on GB, solution isn't straightforward so I leave it how we've always done it for the moment...
   RS <- shf$RS[nrow(shf)]
   CS <- shf$CS[nrow(shf)]
@@ -91,17 +91,17 @@ survey.ts <- function(shf, years=1981:2008, Bank='GBa', type = "N",pdf=F, plots=
   # If we have dat2...
   if(!is.null(dat2))
   {
-  missing.years.dat2 <-  years[!is.element(min(dat2$year):max(dat2$year),dat2$year)]
-  if(length(missing.years.dat2) > 0)
-  {
-    fill.dat2 <- data.frame(matrix(NA,nrow=length(missing.years.dat2),ncol=ncol(dat2)))
-    fill.dat2[,1] <-missing.years.dat2
-    names(fill.dat2) <- names(dat2)
-    # I will give this a new name as this messing up the survey object for the SHF plot...
-    dat2<- rbind(dat2,fill.dat2)
-    # And now re-order the data and everything will be wonderful!
-    dat2 <- dat2[order(dat2$year),]
-  } # end if(length(missing.years > 0))
+    missing.years.dat2 <-  years[!is.element(min(dat2$year):max(dat2$year),dat2$year)]
+    if(length(missing.years.dat2) > 0)
+    {
+      fill.dat2 <- data.frame(matrix(NA,nrow=length(missing.years.dat2),ncol=ncol(dat2)))
+      fill.dat2[,1] <-missing.years.dat2
+      names(fill.dat2) <- names(dat2)
+      # I will give this a new name as this messing up the survey object for the SHF plot...
+      dat2<- rbind(dat2,fill.dat2)
+      # And now re-order the data and everything will be wonderful!
+      dat2 <- dat2[order(dat2$year),]
+    } # end if(length(missing.years > 0))
   }
   # If making user SH bin plots I need to get the correct names...
   if(!is.null(user.bins))
@@ -130,7 +130,7 @@ survey.ts <- function(shf, years=1981:2008, Bank='GBa', type = "N",pdf=F, plots=
     mean.names <- c(mean.names,paste0(mean.names,"_bm"))
     CV.names <- c(CV.names,paste0(CV.names,"_bm"))
   } # end if(!is.null(user.bins))
-  
+
   # If we aren't using the user bins then we just grab the pre/rec/com data as requested
   if(is.null(user.bins)) 
   {
@@ -203,8 +203,8 @@ survey.ts <- function(shf, years=1981:2008, Bank='GBa', type = "N",pdf=F, plots=
   # The reverse puts them in order so that pre plots first if not making the user bin plots...
   if(is.null(user.bins)) mn.tmp <- names(shf)[rev(which(names(shf) %in% mean.names))]
   if(is.null(user.bins)) CV.tmp <- names(shf)[rev(which(names(shf) %in% CV.names))]
-
   # Get the names for the plots...
+
   plot.names <- NULL
   for(i in 1:length(mn.tmp))
   {
@@ -212,8 +212,8 @@ survey.ts <- function(shf, years=1981:2008, Bank='GBa', type = "N",pdf=F, plots=
     if(!is.null(user.bins))
     {
       if(i == 1) plot.names[[i]] <- substitute(paste(phantom(0),"<", a," mm",sep=""),list(a = user.bins[i]))
-      if(i > 1 && i < length(mn.tmp)) plot.names[[i]] <- substitute(paste(a ,"-", b, " mm",sep=""),list(a = user.bins[i-1],b=user.bins[i]-1))
-      if(i == length(mn.tmp)) plot.names[[i]] <- substitute(paste(phantom(0)>= a, " mm",sep=""),list(a = user.bins[i-1])) #phantom needed to make a leading math symbol...
+      if(i > 1 && i < length(mn.tmp)) plot.names[[i]] <- substitute(paste(a ,"-", b, " mm",sep=""),list(a = user.bins[i]-1,b=user.bins[i]-1))
+      if(i == length(mn.tmp)) plot.names[[i]] <- substitute(paste(phantom(0)>= a, " mm",sep=""),list(a = user.bins[i]-1)) #phantom needed to make a leading math symbol...
       
     } # end if(!is.null(user.bins))
     if(is.null(user.bins))

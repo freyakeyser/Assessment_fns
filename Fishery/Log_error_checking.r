@@ -75,12 +75,14 @@ log_checks <- function(direct, direct_fns, yrs = NULL , marfis=T, repo = "github
               "https://raw.githubusercontent.com/Mar-scal/Assessment_fns/master/Maps/combo_shp.R",
               "https://raw.githubusercontent.com/Mar-scal/Assessment_fns/master/Fishery/Log_spatial_checks/app.R")
     # Now run through a quick loop to load each one, just be sure that your working directory is read/write!
-    for(fun in funs) 
-    {
-      download.file(fun,destfile = basename(fun))
-      source(paste0(getwd(),"/",basename(fun)))
-      file.remove(paste0(getwd(),"/",basename(fun)))
-    } # end  for(fun in funs) 
+dir <- tempdir()
+for(fun in funs) 
+{
+  temp <- dir
+  download.file(fun,destfile = paste0(dir, "\\", basename(fun)))
+  source(paste0(dir,"/",basename(fun)))
+  file.remove(paste0(dir,"/",basename(fun)))
+}# end  for(fun in funs) 
   } # end if(repo == "github")
   
   if(repo == "local")
@@ -92,12 +94,12 @@ log_checks <- function(direct, direct_fns, yrs = NULL , marfis=T, repo = "github
   } # end if(repo== 'local')
   
   # The necesary library
-  require(maptools)  || stop("Maptools, MAPtools, MAPTOOLS, install this package, please, now, HURRY!!!!")
+  #require(maptools)  || stop("Maptools, MAPtools, MAPTOOLS, install this package, please, now, HURRY!!!!")
   require(sp)  || stop("You shall not pass until you install the *sp* package... you've been warned...")
-  require(rgeos)  || stop("Without *rgeos* package installed you won't be able to do anything...")
+ # require(rgeos)  || stop("Without *rgeos* package installed you won't be able to do anything...")
   require(lubridate) || stop("You need the *lubridate* package installed or you won't even know what year it is...")
   require(openxlsx)|| stop(" You need the openxlsx package if you want to export the results bub...")
-  require(rgdal)|| stop("You shall not pass until you install the *rgdal* package... you've been warned...")
+  #require(rgdal)|| stop("You shall not pass until you install the *rgdal* package... you've been warned...")
   require(sf)|| stop("You shall not pass until you install the *sf* package... you've been warned...")
   options(stringsAsFactors = F)
   
@@ -472,6 +474,7 @@ log_checks <- function(direct, direct_fns, yrs = NULL , marfis=T, repo = "github
       }
       
       trip_plot <- pect_plot  + geom_sf(data=trip.log) + 
+        coord_sf(xlim=pect_plot$coordinates$limits$x, ylim=pect_plot$coordinates$limits$y) +
         ggtitle(paste0(trip.log$ves[1],"_",trip.log$vrnum[1],"_",min(trip.log$fished,na.rm=T),"-",max(trip.log$fished,na.rm=T))) +
         scale_x_continuous(expand=c(0.1, 0)) + scale_y_continuous(expand=c(0.1, 0))
       
@@ -498,6 +501,11 @@ log_checks <- function(direct, direct_fns, yrs = NULL , marfis=T, repo = "github
       osa.all[[i]] <- osa
       
       #manually expand pr for each trip
+      if(is.character(pr)) {
+        pr$x <- trip_plot$coordinates$limits$x
+        pr$y <- trip_plot$coordinates$limits$y 
+      }
+      
       if(pr$x[1] < pr$x[2])
       {
         if(pr$x[1] < 0) pr$x[1] <-pr$x[1] + 0.0025*pr$x[1]
@@ -583,9 +591,9 @@ log_checks <- function(direct, direct_fns, yrs = NULL , marfis=T, repo = "github
     assign('dat.export',dat.export,pos=1)
   } # end if(!is.null(export))
   
-  if(is.null(export)) return(dat.export)
+  if(is.null(export) & !plot == "shiny") return(dat.export)
   
-  if(plot== "shiny" && is.null(reg.2.plot)) {
+  if(plot== "shiny") {
     shinyapp(trip.log=trip.log.all, osa=osa.all, pr=pr.all, direct=direct, direct_fns=direct_fns, repo=repo, pect_ggplot = pect_ggplot.all)
   }
   

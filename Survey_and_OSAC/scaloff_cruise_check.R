@@ -11,7 +11,7 @@ scaloff_cruise_check <- function(tow=TRUE, hf=TRUE, mwsh=TRUE,
   require(readxl) || stop("Make sure you have readxl package installed to run this")
   require(plyr) || stop("Make sure you have plyr package installed to run this")
   require(geosphere) || stop("Make sure you have geosphere package installed to run this")
-  require(rgeos) || stop("Make sure you have rgeos package installed to run this")
+  #require(rgeos) || stop("Make sure you have rgeos package installed to run this")
   require(ggplot2) || stop("Make sure you have rgeos package installed to run this")
   require(reshape2) || stop("Make sure you have reshape2 package installed to run this")
   
@@ -21,19 +21,21 @@ scaloff_cruise_check <- function(tow=TRUE, hf=TRUE, mwsh=TRUE,
   {
     funs <- c("https://raw.githubusercontent.com/Mar-Scal/Assessment_fns/master/Survey_and_OSAC/convert.dd.dddd.r")
     # Now run through a quick loop to load each one, just be sure that your working directory is read/write!
-    for(fun in funs) 
-    {
-      download.file(fun,destfile = basename(fun))
-      source(paste0(getwd(),"/",basename(fun)))
-      file.remove(paste0(getwd(),"/",basename(fun)))
-    } # end for(un in funs)
+dir <- tempdir()
+for(fun in funs) 
+{
+  temp <- dir
+  download.file(fun,destfile = paste0(dir, "\\", basename(fun)))
+  source(paste0(dir,"/",basename(fun)))
+  file.remove(paste0(dir,"/",basename(fun)))
+} # end for(un in funs)
   } # end  if(missing(direct_fns))
   
   
   if(!missing(direct_fns)) source(paste(direct_fns,"Survey_and_OSAC/convert.dd.dddd.r",sep=""))
   
   if(season=="spring") {
-    banks <- c("Sab", "Mid", "Ban", "Ger", "BBn", "BBs", "GB")
+    banks <- c("Sab", "Mid", "Ban", "Ger", "BBn", "BBs", "GB","GBMon")
   }
   
   if(season=="summer") {
@@ -54,9 +56,9 @@ scaloff_cruise_check <- function(tow=TRUE, hf=TRUE, mwsh=TRUE,
       message("STOP! Please re-consider using CSVs instead of XLSX files. You should have created CSVs because of date formatting issues between users with XLSX files.")
       for(i in 1:length(unique(banks))){
         files <- list.files(paste0(direct, "Data/Survey_data/", year, "/Database loading/", cruise[j], "/", banks[i], "/"))
-        towfile <- files[grep(files, pattern="tow")][grep(files[grep(files, pattern="tow")], pattern=".xlsx")]
-        mwshfile <- files[grep(files, pattern="meat")][grep(files[grep(files, pattern="meat")], pattern=".xlsx")]
-        hffile <- files[grep(files, pattern="hf")][grep(files[grep(files, pattern="hf")], pattern=".xlsx")]
+        towfile <- files[grep(files, pattern=".tow")][grep(files[grep(files, pattern=".tow")], pattern=".xlsx")]
+        mwshfile <- files[grep(files, pattern=".meat")][grep(files[grep(files, pattern=".meat")], pattern=".xlsx")]
+        hffile <- files[grep(files, pattern=".hf")][grep(files[grep(files, pattern=".hf")], pattern=".xlsx")]
         if(length(towfile) > 1 | length(mwshfile) > 1 | length(hffile) > 1) {
           message(paste0("\nThere are multiple files of the same type (tow/mwsh/hf). Check the following files in the folder: \n", 
                          direct, "Data/Survey_data/", year, "/Database loading/", cruise[j], "/", banks[i]))
@@ -86,9 +88,9 @@ scaloff_cruise_check <- function(tow=TRUE, hf=TRUE, mwsh=TRUE,
     if(type=="csv"){
       for(i in 1:length(unique(banks))){
         files <- list.files(paste0(direct, "Data/Survey_data/", year, "/Database loading/", cruise[j], "/", banks[i], "/"))
-        towfile <- files[grep(files, pattern="tow")][grep(files[grep(files, pattern="tow")], pattern=".csv")]
-        mwshfile <- files[grep(files, pattern="meat")][grep(files[grep(files, pattern="meat")], pattern=".csv")]
-        hffile <- files[grep(files, pattern="hf")][grep(files[grep(files, pattern="hf")], pattern=".csv")]
+        towfile <- files[grep(files, pattern=".tow")][grep(files[grep(files, pattern=".tow")], pattern=".csv")]
+        mwshfile <- files[grep(files, pattern=".meat")][grep(files[grep(files, pattern=".meat")], pattern=".csv")]
+        hffile <- files[grep(files, pattern=".hf")][grep(files[grep(files, pattern=".hf")], pattern=".csv")]
         # bring in the extras or icelandic if they are in separate CSVs
         extrahffile <- hffile[grep(hffile, pattern="extra")]
         extratowfile <- towfile[grep(towfile, pattern="extra")]

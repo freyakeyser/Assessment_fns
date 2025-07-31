@@ -46,13 +46,13 @@ grow.pot <- function(dat= NULL, mwsh.fit=NULL, von.b = NULL, year=NULL,bank = NU
   if(is.null(mwsh.fit) && pred.mw == T) 
   {
     cat("Hallo... In the growth potential function if you area trying to predict mw next year you need to provide the 'mwsh.fit' object 
-          which is the MW-SH relationship. Blessed be the meat.")
+          which is the MW-SH relationship.")
     stop()
   }
   if(is.null(von.b) && bank != "GBa") 
   {
   cat("Heads up!!!  In the growth potential function you didn't provide the von B parameters and specified a bank other than GBa, therefore
-             we are using the von B parameters for Browns Bank North... Under his eyes")
+             we are using the von B parameters for Browns Bank North...")
   }
   # If year is not supplied than obtain from the data, this is meant to run for just one year of data, by default it picks the most recent year of data
 	if(is.null(year)==T) year<-max(unique(dat$year))
@@ -73,11 +73,13 @@ grow.pot <- function(dat= NULL, mwsh.fit=NULL, von.b = NULL, year=NULL,bank = NU
 	# If you didn't provide the von.b object then we go and get the values from the one place we have them stored at the moment.
 	if(is.null(von.b)) 
 	{
-	  Von.B <- read.csv(paste(direct,"Data/Ageing/Von_B_growth_parameters.csv",sep=""))
+	  Von.B <- read.csv(paste(direct,"Data/Ageing/Von_B_growth_parameters_framework.csv",sep=""))
 	  # If you want the GBa data then we grab it, if you specify any other bank then you get BBn growth parameters b/c that's all we got right now for offshore
 	  # This could easily be expanded to work for inshore if we want...
 	  if(bank == "GBa") Von.B <- Von.B[Von.B$Bank == "GBa",c("Linf","K","to")]
-	  if(bank != "GBa") Von.B <- Von.B[Von.B$Bank == "BBn",c("Linf","K","to")]
+	  if(bank == "BBn") Von.B <- Von.B[Von.B$Bank == "BBn",c("Linf","K","to")]
+	  if(bank == "Sab") Von.B <- Von.B[Von.B$Bank == "Sab",c("Linf","K","to")]
+	  if(!bank %in% c("GBa", "BBn", "Sab")) Von.B <- Von.B[Von.B$Bank == "BBn",c("Linf","K","to")]
 	} # if(is.null(von.b)) 
 	
 	# Now we get the average size for each tow. it's a weighted sum of the size of each bin.
@@ -98,9 +100,25 @@ grow.pot <- function(dat= NULL, mwsh.fit=NULL, von.b = NULL, year=NULL,bank = NU
 	# Note that this should only be done for the year in which the MW-SH data is applicable
 	if(pred.mw == T)
 	{
-	 # This is the assumed offshore allometry, we'd have to change this up for inshore...
-	 dat$cur.mw[dat$tow %in% mwsh.fit$fit$tow] <- mwsh.fit$fit$a*(dat$cur.sh[dat$tow %in% mwsh.fit$fit$tow]/100)^3
-	 dat$pred.mw[dat$tow %in% mwsh.fit$fit$tow] <- mwsh.fit$fit$a*(dat$pred.sh[dat$tow %in% mwsh.fit$fit$tow]/100)^3
+	  if(bank %in% c("GBa", "GB")) {# This is the assumed offshore allometry, we'd have to change this up for inshore...
+	    dat$cur.mw[dat$tow %in% mwsh.fit$fit$tow] <- mwsh.fit$fit$a*(dat$cur.sh[dat$tow %in% mwsh.fit$fit$tow]/100)^3
+	    dat$pred.mw[dat$tow %in% mwsh.fit$fit$tow] <- mwsh.fit$fit$a*(dat$pred.sh[dat$tow %in% mwsh.fit$fit$tow]/100)^3
+	  }
+	  if(!bank %in% c("GBa", "GB")) {
+	    slope <- mwsh.fit %>% dplyr::filter(year == year) %>% dplyr::pull(fix.slope); slope <- slope[1]
+	    int <- mwsh.fit %>% dplyr::filter(year == year) %>% dplyr::pull(fix.int); int <- int[1]
+	    rand.int <- mwsh.fit[mwsh.fit$year==year & !is.na(mwsh.fit$ran.int.act),] %>% dplyr::pull(ran.int.act,tow)
+	    
+	    for(i in 1:length(rand.int)) {
+	      dat$cur.mw[dat$tow %in% names(rand.int)[i]] <- exp(rand.int)[i] * (dat$cur.sh[dat$tow %in% names(rand.int)[i]]/100)^slope
+	      dat$pred.mw[dat$tow %in% names(rand.int)[i]] <- exp(rand.int)[i] * (dat$pred.sh[dat$tow %in% names(rand.int)[i]]/100)^slope
+	    }
+	    
+	    for(i in 1:length(dat$tow[!dat$tow %in% names(rand.int)])){
+	      dat$cur.mw[dat$tow %in% dat$tow[!dat$tow %in% names(rand.int)][i]] <- exp(int) * (dat$cur.sh[dat$tow %in% dat$tow[!dat$tow %in% names(rand.int)][i]]/100)^slope
+	      dat$pred.mw[dat$tow %in% dat$tow[!dat$tow %in% names(rand.int)][i]] <- exp(int) * (dat$pred.sh[dat$tow %in% dat$tow[!dat$tow %in% names(rand.int)][i]]/100)^slope
+	    }
+	  }
 	 dat$gp.mw <- (dat$pred.mw - dat$cur.mw) / dat$cur.mw
 	}
 

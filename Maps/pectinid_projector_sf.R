@@ -33,7 +33,9 @@
 #8: legend    If you added a custom or INLA layer you can print the legend if you like.  Default = F which doesn't plot legend.
 #9: txt.size  If you want to change the size of the text in the figure (legend and axis).  Default txt.size = 18.
 #9a:axes      If you want to show the axis labels as either Degree Minutes or Degree Minutes Seconds instead of default (NULL). NULL = decimal degress or UTM, axes = "DM" will show Degree minutes, 
-#                  axes = "DMS" will show Degree minute seconds.  
+#                  axes = "DMS" will show Degree minute seconds. 
+#9c: language: For the Axis we need to have the label as an "O" instead of a "W". language = "french' is the only thing works for this, anything else does the
+#                   it in english.
 #################################### LAYER OPTIONS#################################### LAYER OPTIONS#################################### LAYER OPTIONS
 
 #10: add_layer   Do you have a layer you'd like to add to the plot.  default = and empty list which will just return a map of the area with land on it.  To add layers
@@ -152,8 +154,7 @@
 
 # A working almost full example (no custom) of a call to this function that should work without any modification as long
 # as you are connected to the NAS drive...
-#pecjector(obj = NULL, plot_as == "ggplot", area = "BBn",plot = T, 
-#          gis.repo = 'local',c_sys = 32619, buffer =1000,repo = "Y:/Offshore/Assessment/Assesment_fns/",
+#pecjector(obj = NULL, area = "BBn",plot = T, 
 #          add_layer = list(land = 'grey',eez = 'eez', bathy = 50, nafo = 'main',sfa = 'offshore',survey = c('offshore','detailed'),s.labels = 'offshore',scale.bar = 'bl',scale.bar = c('bl',0.5)))
 
 ########## If you had an INLA layer, a full call to that would be to add this to the above..
@@ -165,7 +166,7 @@
 #           scale= list(scale = 'discrete', palette = viridis::viridis(100), breaks = seq(0,1, by = 0.05), limits = c(0,1), alpha = 0.8,leg.name = "Ted"))
 
 
-pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),x = c(-68,-55),crs = 4326), plot = T, txt.size = 18,
+pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),x = c(-68,-55),crs = 4326), plot = T, txt.size = 16,language = "english",
                      gis.repo = "github",c_sys = "ll",  buffer = 0, repo = "github", legend = F, axes = NULL, quiet=F,
                      # Controls what layers to add to the figure (land,eez, nafo, sfa's, labels, )
                      add_layer = list(land = 'grey'),
@@ -183,17 +184,18 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
   require(ggplot2) || stop("Install ggplot2 or else.")
   require(stars) || stop("Install stars or else.")
   require(tmaptools) || stop("Install this new tmaptools package, for working with sf objects")
-  require(maptools) || stop("Install this old maptools package, for the Polyset2SpatialLines function")
-  if(is.null(add_layer$land)) add_layer$land <- "grey"
-  if(add_layer$land == 'world')
+  #require(maptools) || stop("Install this old maptools package, for the Polyset2SpatialLines function")
+  if(!is.null(add_layer$land)) 
   {
-  require(rnaturalearth) || stop("Install rnaturalearth package, this replaces maps and mapdata packages")
-  require(rnaturalearthdata)|| stop("Install rnaturalearthdata package, this replaces maps and mapdata packages")
-  require(rnaturalearthhires) || stop("You need rnaturalearthhires run this to install devtools::install_github('ropensci/rnaturalearthhires') ")
-  }
+    if(add_layer$land == 'world')
+    {
+    require(rnaturalearth) || stop("Install rnaturalearth package, this replaces maps and mapdata packages")
+    require(rnaturalearthdata)|| stop("Install rnaturalearthdata package, this replaces maps and mapdata packages")
+    require(rnaturalearthhires) || stop("You need rnaturalearthhires run this to install devtools::install_github('ropensci/rnaturalearthhires') ")
+    }}
   require(raster)|| stop("You need raster, well you might not, depends really what you are doing... ")
-  require(rgdal)|| stop("You need rgdal pal")
-  require(RStoolbox) || stop ("You need RStoolbox to rasterize and reproject your bathymetry")
+  #require(rgdal)|| stop("You need rgdal pal")
+  #require(RStoolbox) || stop ("You need RStoolbox to rasterize and reproject your bathymetry")
   require(pals) || stop("Pals package is needed, it is your one stop shop of colour pallettes in R, install it!")
   require(ggnewscale)  || stop ("Please install ggnewscale...If you want multiple colour ramps on one ggplot, you want ggnewscale :-)")
   require(ggspatial) ||stop ("Please install ggspatial which is needed to include the scale bar")
@@ -262,9 +264,8 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
   # Now we need to get our ylim and xlim using the convert.coords function
   # Get our coordinates in the units we need them, need to do some stick handling if we've entered specific coords above
   # This the case in which we enter numbers as our coordinate system  
-
-  if(any(class(loc) == 'list')) coords <- convert.coords(plot.extent = list(y=loc$y,x=loc$x),in.csys = loc$crs,out.csys = c_sys,bbox.buf = buffer,make.sf=T)
-  if(any(class(loc)=="data.frame")) coords <- convert.coords(plot.extent = list(y=loc$y,x=loc$x),in.csys = loc$crs,out.csys = c_sys,bbox.buf = buffer,make.sf=T)
+  if(any(class(loc) == 'list')) coords <- convert.coords(plot.extent = list(y=loc$y,x=loc$x),in.csys = unique(loc$crs),out.csys = c_sys,bbox.buf = buffer,make.sf=T)
+  if(any(class(loc)=="data.frame")) coords <- convert.coords(plot.extent = list(y=loc$y,x=loc$x),in.csys = unique(loc$crs),out.csys = c_sys,bbox.buf = buffer,make.sf=T)
   # This is the case when we put a name in and let convert.coords sort it out.
   if(any(class(loc) == 'character')) coords <- convert.coords(plot.extent = loc,out.csys = c_sys,bbox.buf = buffer, make.sf=T)
   if(any(class(loc) %in% c("sp"))) loc <- st_as_sf(loc) # Convert to sf cause I already have that ready to roll below
@@ -325,9 +326,9 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
   } # end if(!is.null(add_EEZ)) 
   # Now grab the land, note we're using the rnaturalearth package now
   # We also want to get the land
+  
   if(any(layers == 'land'))
   {
-  
     lnd <- add_layer$land
     # If using the world map we go here
     if(lnd == 'world')
@@ -338,19 +339,23 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
     if(lnd != 'world' & gis.repo == 'github')
     {
       temp <- tempfile()
-      download.file("https://raw.githubusercontent.com/Dave-Keith/GIS_layers/master/other_boundaries/other_boundaries.zip", temp,quiet=quiet)
+      download.file("https://raw.githubusercontent.com/Mar-scal/GIS_layers/master/other_boundaries/other_boundaries.zip", temp,quiet=quiet)
       # Download this to the temp directory you created above
       temp2 <- tempfile()
       # Unzip it
       unzip(zipfile=temp, exdir=temp2)
       land.all <- st_read(dsn = paste0(temp2,"/Atl_region_land.shp"))
       land.col <- lnd
+      stpierre <- st_read(dsn = paste0(temp2,"/SPM_adm0.shp"))
+      land.all <- st_union(land.all, stpierre)
     }
     # If you want to sorce it locally.
     if(lnd != 'world' & gis.repo != 'github') 
     {
       land.all <- st_read(paste0(gis.repo,"/other_boundaries/Atl_region_land.shp"))
       land.col <- lnd
+      stpierre <- st_read(paste0(gis.repo,"/other_boundaries/SPM_adm0.shp"))
+      land.all <- st_union(land.all, stpierre)
     }
     
     # f we are lat/lon and WGS84 we don't need to bother worrying about clipping the land (plotting it all is fine)
@@ -478,9 +483,10 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
             # I need a new grid that is a raster object
             re.proj.bathy <- projectRaster(bathy,b.ras)
             re.proj.bathy <- projectRaster(bathy,b.ras) # For some reason this doesn't always work the first time you call it during an R session, but works when you do a second time?
+            
             # Now I need to try and fortify this raster, I need to have the RStoolbox to fortify the raster 
-            bathy.gg <- fortify(re.proj.bathy)
-          } else { bathy.gg <- fortify(bathy)}
+            bathy.gg <- as.data.frame(re.proj.bathy, xy=T) #fortify(re.proj.bathy)
+          } else { bathy.gg <- as.data.frame(bathy, xy=T)}
           # define the contour breaks, only plot contours between 0 and everything deeper than specificed (default = 500m) .
           bathy.breaks <- seq(0, -abs(as.numeric(add_layer$bathy[3])), -abs(as.numeric(add_layer$bathy[1])))
         }
@@ -602,14 +608,18 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
         # Figure out where your tempfiles are stored
         temp <- tempfile()
         # Download this to the temp directory you created above
-        download.file("https://raw.githubusercontent.com/Mar-scal/GIS_layers/master/offshore/offshore.zip", temp, quiet=quiet)
+        download.file("https://raw.githubusercontent.com/Mar-scal/GIS_layers/master/offshore/offshore.zip", temp, quiet=F)
         # Figure out what this file was saved as
         temp2 <- tempfile()
         # Unzip it
         unzip(zipfile=temp, exdir=temp2)
         
         # This pulls in all the layers from the above location
-        offshore.spa <- combo.shp(temp2,make.sf=T, quiet=quiet)
+        offshore.spa <- combo.shp(temp2,make.sf=T, quiet=F)
+        # Remove NL since we don't manage those
+        offshore.spa <- offshore.spa %>%
+          filter(!ID %in% c("NL.shp", "SFA10.shp", "SFA11.shp", "SFA12.shp", "SPB.shp", "Gulf.shp"))
+          #filter(!ID %in% c("NL.shp", "SFA10.shp", "SFA11.shp", "SFA12.shp"))
         # Now transform all the layers in the object to the correct coordinate system, need to loop through each layer
         # Because of issues with the polygons immediately needed to turn it into a multilinestring to avoid bad polygons, works a charm after that...
         if(any(st_is_empty(offshore.spa))) message(paste0("removed ", offshore.spa[st_is_empty(offshore.spa),]$ID, " because they were empty"))
@@ -624,7 +634,7 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
       } # end if(add_sfas != "offshore")  
       
     }# end if(gis.repo = 'github')
-    
+
     # Now if you aren't using github do this...
     if(gis.repo != 'github')
     {
@@ -649,6 +659,9 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
         loc <- paste0(gis.repo,"/offshore")
         # This pulls in all the layers from the above location
         offshore.spa <- combo.shp(loc,make.sf=T, quiet=quiet)
+        # Remove NL since we don't manage those
+        offshore.spa <- offshore.spa %>%
+          filter(!ID %in% c("NL.shp", "SFA10.shp", "SFA11.shp", "SFA12.shp", "SPB.shp", "Gulf.shp"))
         # Now transform all the layers in the object to the correct coordinate system, need to loop through each layer
         # Because of issues with the polygons immediately needed to turn it into a multilinestring to avoid bad polygons, works a charm after that...
         offshore.spa <- st_cast(offshore.spa,to= "MULTILINESTRING")
@@ -803,7 +816,7 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
   } # end if(any(layers == 'survey')) 
   #sf::st_use_s2(FALSE)
   # Here you can add a custom sp, sf, PBSmapping object or shapefile here
- 
+  
   if(length(add_custom) != 0)
   {
     
@@ -816,18 +829,21 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
     if(class(add_custom$obj)[1] == "character")
     {
       # If it is an xls or a csv we assume we have a PBSmapping object
+      # FIX, I do not believe this will work anymore as PolySet2SpatialLines is a maptools function that isn't supported any longer
+      # We could easily grab the code for that function and make our own version of it if we need it.
       if(grepl(".xls",add_custom$obj) || grepl(".csv",add_custom$obj))
       {
         if(grepl(".csv",add_custom$obj)) temp <- read.csv(add_custom$obj)
         if(grepl(".xls",add_custom$obj)) temp <- read_excel(add_custom$obj,sheet=1) # This will only pull in the first sheet, don't get fancy here
         temp <- as.PolySet(temp,projection = "LL") # I am assuming you provide Lat/Lon data and WGS84
+        
         temp <- PolySet2SpatialLines(temp) # Spatial lines is a bit more general (don't need to have boxes closed)
         custom <- st_as_sf(temp)
       } else { custom <- combo.shp(add_custom$obj,make.sf=T, quiet=quiet)}# If it doesn't then we assume we have a shapefile, if anything else this won't work.
     } # end if(class(add_custom$obj)[1] == "character")
     # Now transform all the layers in the object to the correct coordinate system, need to loop through each layer
     custom  <- st_transform(custom,c_sys)
-    #trim to bbox
+     #trim to bbox
     custom <- st_intersection(custom, b.box)
     
     # If we specify the size, fill or color to be a unique value we set these up here, if they are blank we go to some defaults.
@@ -902,7 +918,27 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
       temp2 <- tempfile()
       # Unzip it
       unzip(zipfile=temp, exdir=temp2)
-      s.labels <- combo.shp(temp2,make.sf=T,make.polys=F, quiet=T)
+      
+      #s.labels <- combo.shp(temp2,make.sf=T,make.polys=F, quiet=T) # combo.shp depricated with outdated purrr package
+      #new workaround:
+      s.labels <- st_read(temp2, quiet = TRUE)
+      s.labels <- st_transform(s.labels, c_sys)
+      # remove Newfoundland entires since outside of Maritimes Region scope, and unnecessary labels
+      s.labels <- s.labels %>%
+        filter(!lab_short %in% c("St. Pierre Bank", "Includes SFA 10-12", "SFA 10", "SFA 11", "SFA 12", "Georges Bank a", "Georges Bank b", "Includes Middle and Sable Banks"))
+      # add A/B/C labels to SFA 26 (Browns/German)
+      s.labels <- s.labels %>%
+        mutate(
+          lab_short = case_when(
+            lab_short == "SFA 26 (German Bank)" ~ "SFA 26C",
+            lab_short == "SFA 26 (Browns Bank north)" ~ "SFA 26A",
+            lab_short == "SFA26 (Browns Bank south)" ~ "SFA 26B",
+            lab_short == "SFA25 (Eastern Scotian Shelf)" ~ "SFA 25A",
+            lab_short == "SFA25-BAN (Banquereau)" ~ "SFA 25B",
+            TRUE ~ lab_short  # keep all other labels unchanged
+          )
+        )
+      #continue as normal
       s.labels <- st_transform(s.labels,c_sys)
    
       if(add_layer$s.labels == "offshore") s.labels <- s.labels %>% dplyr::filter(region == 'offshore')
@@ -910,7 +946,10 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
       if(add_layer$s.labels == "ID") s.labels <- s.labels %>% dplyr::filter(region == 'inshore_detailed')
       if(add_layer$s.labels == "IDS") s.labels <- s.labels %>% dplyr::filter(region == 'inshore_detailed_survey')
       if(add_layer$s.labels == "all") s.labels <- s.labels %>% dplyr::filter(region %in% c('offshore','inshore'))
-      if(add_layer$s.labels == "offshore_detailed") s.labels <- s.labels[grepl('offshore_detailed',s.labels$region),]
+      #if(add_layer$s.labels == "offshore_detailed") s.labels <- s.labels[grepl('offshore_detailed',s.labels$region),]
+      if(add_layer$s.labels == "offshore_detailed") {
+        s.labels <- s.labels[s.labels$region %in% c("offshore_detailed", "offshore"), ]
+      }
       s.labels <- st_intersection(s.labels, b.box)
       #Needed to be a little funky for offshore detailed because we may have to plot some of the offshore ones on an angle...
       # if(any(grepl("angle",s.labels$region)))
@@ -930,7 +969,10 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
       if(add_layer$s.labels == "ID") s.labels <- s.labels %>% dplyr::filter(region == 'inshore_detailed')
       if(add_layer$s.labels == "IDS") s.labels <- s.labels %>% dplyr::filter(region == 'inshore_detailed_survey')
       if(add_layer$s.labels == "all") s.labels <- s.labels %>% dplyr::filter(region %in% c('offshore','inshore'))
-      if(add_layer$s.labels == "offshore_detailed") s.labels <- s.labels[grepl('offshore_detailed',s.labels$region),]
+      #if(add_layer$s.labels == "offshore_detailed") s.labels <- s.labels[grepl('offshore_detailed',s.labels$region),]
+      if(add_layer$s.labels == "offshore_detailed") {
+        s.labels <- s.labels[s.labels$region %in% c("offshore_detailed", "offshore"), ]
+      }
       #if(add_layer$s.labels == "offshore_detailed_angle") s.labels <- s.labels[grepl('offshore_detailed_angle',s.labels$region),]
       
       s.labels <- st_intersection(s.labels, b.box)
@@ -971,38 +1013,64 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
     {
       # If we have a value < 0 or that the maximum value of the mesh is < 180 I assume we are in lat/lon WGS84, which should be close at least for
       # anything in the maritime region.
-      if(min(add_inla$mesh$loc[,1]) < 0 || max(add_inla$mesh$loc[,1] < 180)) add_inla$mesh$crs <- mesh.csys <-  crs("+init=epsg:4326")
-      # If you have really big numbers I'm going for it being UTM, assuming you are doing something in the Maritimes this is fine...
-      if(max(add_inla$mesh$loc[,1]) > 20000) add_inla$mesh$crs <- mesh.csys <- crs("+init=epsg:32620")
-      # if I was successful in making a mesh warn the user if we automatically added a CRS to the mesh
-      if(exists("mesh.csys")) cat(paste0("Hello, local Programmer, You did not specify the mesh CRS, I used the coordinates in the mesh to take 
+      if(!class(add_inla$mesh) == "sdmTMBmesh"){
+        if(min(add_inla$mesh$loc[,1]) < 0 || max(add_inla$mesh$loc[,1] < 180)) add_inla$mesh$crs <- mesh.csys <-  crs("+init=epsg:4326")
+        # If you have really big numbers I'm going for it being UTM, assuming you are doing something in the Maritimes this is fine...
+        if(max(add_inla$mesh$loc[,1]) > 20000) add_inla$mesh$crs <- mesh.csys <- crs("+init=epsg:32620")
+        # if I was successful in making a mesh warn the user if we automatically added a CRS to the mesh
+        if(exists("mesh.csys")) cat(paste0("Hello, local Programmer, You did not specify the mesh CRS, I used the coordinates in the mesh to take 
                                                     a guess that the coordinate system is ", mesh.csys , " please confirm!!"))
-      # If not successful in making a mesh we shut er down.
-      if(!exists("mesh.csys")) cat(paste0("Hello, local Programmer, You did not specify the mesh CRS and I was unable to figure out what it should be, you'll
+        # If not successful in making a mesh we shut er down.
+        if(!exists("mesh.csys")) cat(paste0("Hello, local Programmer, You did not specify the mesh CRS and I was unable to figure out what it should be, you'll
                                            probably get an error before finishing reading this message, or maybe your plot will look dumb... 
                                            please fix and have a nice day!"))
+      }
+      if(class(add_inla$mesh) == "sdmTMBmesh"){
+        if(min(add_inla$mesh$loc_xy[,1]) < 0 || max(add_inla$mesh$loc_xy[,1] < 180)) add_inla$mesh$crs <- mesh.csys <-  crs("+init=epsg:4326")
+        # If you have really big numbers I'm going for it being UTM, assuming you are doing something in the Maritimes this is fine...
+        if(max(add_inla$mesh$loc_xy[,1]) > 20000) add_inla$mesh$crs <- mesh.csys <- crs("+init=epsg:32620")
+        if(exists("c_sys")) add_inla$mesh$crs <- mesh.csys <- crs(paste0("+init=epsg:", c_sys))
+        # if I was successful in making a mesh warn the user if we automatically added a CRS to the mesh
+        if(exists("mesh.csys")) cat(paste0("Hello, local Programmer, You did not specify the mesh CRS, I used the coordinates in the mesh to take 
+                                                    a guess that the coordinate system is ", mesh.csys , " please confirm!!"))
+        # If not successful in making a mesh we shut er down.
+        if(!exists("mesh.csys")) cat(paste0("Hello, local Programmer, You did not specify the mesh CRS and I was unable to figure out what it should be, you'll
+                                           probably get an error before finishing reading this message, or maybe your plot will look dumb... 
+                                           please fix and have a nice day!"))
+      }
     } # end  if(is.null(add_inla$mesh$crs)) 
     # Add in the dims option if that isn't there, low resolution to start.
     if(is.null(add_inla$dims)) add_inla$dims <- c(50,50)
     
     # Project the values appropriately for the data, the xlim/ylim will come from the mesh itself.
-    projec = inla.mesh.projector(add_inla$mesh, xlim = range(add_inla$mesh$loc[,1],na.rm=T) , ylim = range(add_inla$mesh$loc[,2],na.rm=T), dims=add_inla$dims)
-    if(add_inla$mesh$n == length(add_inla$field)) {
-      inla.field = inla.mesh.project(projec, add_inla$field)
+    if(!class(add_inla$mesh) == "sdmTMBmesh") {
+      projec = inla.mesh.projector(add_inla$mesh, xlim = range(add_inla$mesh$loc[,1],na.rm=T) , ylim = range(add_inla$mesh$loc[,2],na.rm=T), dims=add_inla$dims)
+      if(add_inla$mesh$n == length(add_inla$field)) {
+        inla.field = inla.mesh.project(projec, add_inla$field)
+      }
     }
     # If the above step has already happened (this is mostly for backwards compatibility with old code)....
-    if(add_inla$mesh$n != length(add_inla$field)) inla.field <- add_inla$field
-    raster <- raster(rotate(rotate(rotate(inla.field))))
-    extent(raster) <- c(range(projec$x),range(projec$y))
+    if(!class(add_inla$mesh)=="sdmTMBmesh") {
+      if(add_inla$mesh$n != length(add_inla$field)) {
+        inla.field <- add_inla$field
+      }
+      raster <- raster(rotate(rotate(rotate(inla.field))))
+      extent(raster) <- c(range(projec$x),range(projec$y))
+    }
+    if(class(add_inla$mesh)=="sdmTMBmesh") {
+      inla.field <- add_inla$field
+      raster <- inla.field[,c("X", "Y", "est")]
+      raster <- rasterFromXYZ(raster)
+    }
+    
     # To convert a raster to a spatial polygon.is easy..
-    sp.field <- as(raster, "SpatialPolygonsDataFrame") 
+    sp.field <- as(raster, "SpatialPolygonsDataFrame") #10s
     proj4string(sp.field) <- add_inla$mesh$crs # For SP need that gross full crs code, so this...
     # Make it an sf object
-    spd <- st_as_sf(sp.field,as_points=F,merge=F)
+    spd <- st_as_sf(sp.field,as_points=F,merge=F) #10s
     # Now we need to convert to the coordinate system you want
     spd <- st_transform(spd,crs = c_sys)
     # If you want to clip the data to some coordinates/shape this is where that happens.
-    
     if(!is.null(add_inla$clip))
     {
       # The clip has several options, you can use a local shapefile, or you can bring in a shapefile from a local directory
@@ -1025,7 +1093,8 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
     # Now to make the colour ramps...
     # First I'll make a couple of generic colour ramps 
     #I'll set one up using 100 colours and a maximium of 10 breaks, break locations based on the data.
-
+    if(class(add_inla$mesh)=="sdmTMBmesh") spd$layer <- spd$est
+     
     if(!is.null(add_inla$scale$alpha))   {alph <- add_inla$scale$alpha}                   else alph <- 1
     if(!is.null(add_inla$scale$palette)) {col <- addalpha(add_inla$scale$palette,alph)}   else col <- addalpha(pals::viridis(100),alph)
     if(!is.null(add_inla$scale$limits))  {lims <- add_inla$scale$limits}                  else lims <- c(min(spd$layer,na.rm=T),max(spd$layer,na.rm=T))
@@ -1083,7 +1152,7 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
       
     }
     if(exists("bathy.gg") & !exists("bathy.smooth")) pect_plot <- pect_plot + geom_contour(data=bathy.gg, aes(x=x, y=y, z=layer), colour="lightblue", breaks=bathy.breaks)  
-    if(exists("bathy.gg") & exists("bathy.smooth")) pect_plot <- pect_plot + geom_contour(data=bathy.gg, aes(x=x, y=y, z=layer), breaks=bathy.breaks)  
+    if(exists("bathy.gg") & exists("bathy.smooth")) pect_plot <- pect_plot + geom_contour(data=bathy.gg, aes(x=x, y=y, z=layer), colour="azure2", alpha=0.35, breaks=bathy.breaks)  
     if(exists("bathy.scallopmap")) pect_plot <- pect_plot + geom_sf(data=bathy.scallopmap, colour="lightblue")  
     if(exists("sfc")) pect_plot <- pect_plot + new_scale("fill") + geom_sf(data=spd, aes(fill=layer), colour = NA) + sfc 
     if(exists("sfd")) pect_plot <- pect_plot + new_scale("fill") + geom_sf(data=spd, aes(fill=brk), colour = NA)  + sfd  
@@ -1098,13 +1167,15 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
     if(exists("nafo.sub")) pect_plot <- pect_plot + geom_sf(data=nafo.sub, fill=NA)
     if(exists("inshore.spa")) pect_plot <- pect_plot + geom_sf(data=inshore.spa, fill=NA)
     if(exists("offshore.spa")) pect_plot <- pect_plot + geom_sf(data=offshore.spa, fill=NA)
-    
-    if(exists("eez")) pect_plot <- pect_plot + geom_sf(data=eez, colour="firebrick",size=1.25)
+    if(exists("eez")) pect_plot <- pect_plot + geom_sf(data=eez, colour="firebrick",size=1.5, linetype = "dashed")
     if(exists("land.sf")) pect_plot <- pect_plot + geom_sf(data=land.sf, fill=land.col)   
     if(exists("s.labels")) 
     {
       if(any(s.labels$region == 'offshore')) pect_plot <- pect_plot + geom_sf_text(data=s.labels[grepl('offshore',s.labels$region),], aes(label = lab_short),size=3)   
       if(any(s.labels$region =='offshore_detailed')) pect_plot <- pect_plot + geom_sf_text(data=s.labels[s.labels$region=='offshore_detailed',], aes(label = lab_short),size=3)   
+      #if (any(s.labels$region == "offshore_detailed")) {pect_plot <- pect_plot +
+      #    geom_sf_text(data = s.labels[s.labels$region == "offshore_detailed", ],aes(label = lab_short),size = 3) + 
+      #    geom_sf_text(data = s.labels[s.labels$region == "offshore", ],aes(label = lab_long),size = 3)}
       if(any(s.labels$region =='offshore_detailed_angle')) pect_plot <- pect_plot + geom_sf_text(data = s.labels[s.labels$region=='offshore_detailed_angle',], aes(label = lab_short),size = 3,angle =-45)
       if(any(grepl('inshore',s.labels$region))) pect_plot <- pect_plot + geom_sf_text(data=s.labels[grepl('inshore',s.labels$region),], aes(label = lab_short),angle=35,size=3) # rotate it@!
       
@@ -1123,9 +1194,12 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
     }
     if(legend == T) 
     {
-      if(length(brk) <= 6) hgt <- unit(0.5,'cm')
-      if(length(brk) > 6 & length(brk) <= 12) hgt <- unit(0.75,'cm')
-      if(length(brk) > 12) hgt <- unit(1,'cm')
+      if(exists("brk")){
+        if(length(brk) <= 6) hgt <- unit(0.5,'cm')
+        if(length(brk) > 6 & length(brk) <= 12) hgt <- unit(0.75,'cm')
+        if(length(brk) > 12) hgt <- unit(1,'cm')
+      }
+      if(!exists("brk")) hgt <- unit(0.5,'cm')
       
       pect_plot <- pect_plot + 
         coord_sf(xlim = xlim,ylim=ylim)+
@@ -1133,9 +1207,9 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
         xlab(NULL) +
         ylab(NULL)
     }
-
+  
   # Now add in option to show axis labels in Deg-Min and Deg-Min-Sec if you want.
-    if(!is.null(axes))
+    if(!is.null(axes) | language == "french")
     {
       # Need to shrink it here so I get the boundaries right
       pect_plot <- pect_plot + coord_sf(expand=F)
@@ -1173,16 +1247,48 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
       # Repeat
       #lat.loc <- c(43.416667,43.5,43.583333,43.6667,43.75)
       # Now make some labels based on the above, if you can figure out how to get a minute symbol in here you are better than me!
-      if(axes == "DMS")
+      
+      # This only happens if language = 'french'
+      if(is.null(axes))
       {
-        lon.disp <- paste0(substr(lon.tmp$Degree_Min$Degree_Minutes,2,3),expression("*{degree}*"), substr(lon.tmp$Degree_Min$Degree_Minutes,5,6),expression("*{minute}*"), substr(lon.tmp$Degree_Min_Sec$Degree_Minute_Seconds,8,9),expression("*{second}*W"))
-        lat.disp <- paste0(substr(lat.tmp$Degree_Min$Degree_Minutes,1,2),expression("*{degree}*"), substr(lat.tmp$Degree_Min$Degree_Minutes,4,5),expression("*{minute}*"), substr(lat.tmp$Degree_Min_Sec$Degree_Minute_Seconds,7,8),expression("*{second}*N"))
+        lat.disp <- paste0(substr(lat.tmp$Degree_Min$Degree_Minutes,1,2),expression("*{degree}*N"))
+        lon.disp <- paste0(substr(lon.tmp$Degree_Min$Degree_Minutes,2,3),expression("*{degree}*O"))
       }
-      if(axes == "DM")
+      
+      if(!is.null(axes))
       {
-        lon.disp <- paste0(substr(lon.tmp$Degree_Min$Degree_Minutes,2,3),expression("*{degree}*"), substr(lon.tmp$Degree_Min$Degree_Minutes,5,6),expression("*{minute}*W"))
-        lat.disp <- paste0(substr(lat.tmp$Degree_Min$Degree_Minutes,1,2),expression("*{degree}*"), substr(lat.tmp$Degree_Min$Degree_Minutes,4,5),expression("*{minute}*N"))
-      }
+        if(axes == "DMS")
+        {
+          
+          lat.disp <- paste0(substr(lat.tmp$Degree_Min$Degree_Minutes,1,2),expression("*{degree}*"), 
+                             substr(lat.tmp$Degree_Min$Degree_Minutes,4,5),expression("*{minute}*"), 
+                             substr(lat.tmp$Degree_Min_Sec$Degree_Minute_Seconds,7,8),expression("*{second}*N"))
+          if(language == "french")
+          {
+            lon.disp <- paste0(substr(lon.tmp$Degree_Min$Degree_Minutes,2,3),expression("*{degree}*"), 
+                               substr(lon.tmp$Degree_Min$Degree_Minutes,5,6),expression("*{minute}*"), 
+                               substr(lon.tmp$Degree_Min_Sec$Degree_Minute_Seconds,8,9),expression("*{second}*O"))
+          } else {
+            lon.disp <- paste0(substr(lon.tmp$Degree_Min$Degree_Minutes,2,3),expression("*{degree}*"), 
+                               substr(lon.tmp$Degree_Min$Degree_Minutes,5,6),expression("*{minute}*"), 
+                               substr(lon.tmp$Degree_Min_Sec$Degree_Minute_Seconds,8,9),expression("*{second}*W"))  
+          } # end else
+        }# End DMS
+        
+        if(axes == "DM")
+        {
+          lat.disp <- paste0(substr(lat.tmp$Degree_Min$Degree_Minutes,1,2),expression("*{degree}*"), 
+                             substr(lat.tmp$Degree_Min$Degree_Minutes,4,5),expression("*{minute}*N"))
+          if(language == "french")
+          {
+          lon.disp <- paste0(substr(lon.tmp$Degree_Min$Degree_Minutes,2,3),expression("*{degree}*"), 
+                             substr(lon.tmp$Degree_Min$Degree_Minutes,5,6),expression("*{minute}*O"))
+          } else {
+            lon.disp <- paste0(substr(lon.tmp$Degree_Min$Degree_Minutes,2,3),expression("*{degree}*"), 
+                               substr(lon.tmp$Degree_Min$Degree_Minutes,5,6),expression("*{minute}*W"))
+          }# end else
+        } # end DM
+      } # end !is.null(axes)
       # And then replot the figure
       pect_plot <- pect_plot + scale_x_continuous(breaks =lon.loc,labels=parse(text = lon.disp)) +
         scale_y_continuous(breaks = lat.loc,labels=parse(text = lat.disp)) 
@@ -1312,7 +1418,10 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
   #browser()
   if(plot_as != "plotly")
   {
-    pect_plot <- pect_plot + coord_sf(expand=F) + xlab("") + ylab("") + 
+    pect_plot <- pect_plot + 
+      # scale_x_continuous(limits=xlim) + # keep this so you can extract coords outside pecjector
+      # scale_y_continuous(limits=ylim) + # keep this so you can extract coords outside pecjector
+      coord_sf(expand=F, xlim=xlim, ylim=ylim) + xlab("") + ylab("") + 
                              theme(panel.grid=element_blank(),panel.background = element_rect(fill = 'white'))
   } # end if(plot_as != "plotly")
   

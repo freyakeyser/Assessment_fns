@@ -1,5 +1,5 @@
 #### Data processing for model inputs
-#### FK 2021
+#### FK 2021/2022
 # conclusion of 2022 process was to use "mixed" approach for imputation. midpoints for everything except growth, which uses LTM, so I have made that the default param.
 model_inputs <- function(bank, yr, impute="mixed", nickname, direct, direct_fns, survey.obj=NULL){
   
@@ -22,12 +22,14 @@ model_inputs <- function(bank, yr, impute="mixed", nickname, direct, direct_fns,
               "https://raw.githubusercontent.com/Mar-scal/Assessment_fns/master/Fishery/fishery.dat.R"
     )
     # Now run through a quick loop to load each one, just be sure that your working directory is read/write!
-    for(fun in funs) 
-    {
-      download.file(fun,destfile = basename(fun))
-      source(paste0(getwd(),"/",basename(fun)))
-      file.remove(paste0(getwd(),"/",basename(fun)))
-    }
+dir <- tempdir()
+for(fun in funs) 
+{
+  temp <- dir
+  download.file(fun,destfile = paste0(dir, "\\", basename(fun)))
+  source(paste0(dir,"/",basename(fun)))
+  file.remove(paste0(dir,"/",basename(fun)))
+}
   } else {  source(paste(direct_fns,"Fishery/logs_and_fishery_data.r",sep="")) #logs_and_fish is function call
     source(paste(direct_fns,"Fishery/fishery.dat.r",sep="")) 
     source(paste(direct_fns,"Model/projections.r",sep=""))
@@ -126,7 +128,7 @@ model_inputs <- function(bank, yr, impute="mixed", nickname, direct, direct_fns,
   
   #Read1 Bring in the VonB model parameters
   cat("We read in the von B growth parameters from the file .../Data/Ageing/Von_B_growth_parameters.csv \n")
-  vonB <- read.csv(paste(direct,"Data/Ageing/Von_B_growth_parameters.csv",sep=""))
+  vonB <- read.csv(paste(direct,"Data/Ageing/Von_B_growth_parameters_framework.csv",sep=""))
   
   # Run this for one or both banks
   mod.dat <- NULL

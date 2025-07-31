@@ -44,7 +44,7 @@
 
 Relief.plots<-function(tows,MBdata='from.file',expd=1,fig="pdf",digits=4,dirt = direct,repo = 'github',
                        save.dir=paste(direct,yr,"/Survey_Design/Ger/",sep=""),
-                       kms=1,gerfiles=1:77,key.dir=paste(direct,"Data/Environmental/Bathymetry/Ger/Bathymetry/fileKey.csv",sep=""),
+                       kms=1,gerfiles=1:77,key.dir=paste("Y:/GISdata/Private/German_bathy_DEM/fileKey.csv",sep=""),
                        tracks=F,trackPath=paste(direct,"Data/Tow_tracks/",yr,"/Spring/German/",sep=""))
 {
   
@@ -62,12 +62,14 @@ if(repo == "github")
 {
   funs <- c("https://raw.githubusercontent.com/Mar-Scal/Assessment_fns/master/Survey_and_OSAC/getdis.r")
   # Now run through a quick loop to load each one, just be sure that your working directory is read/write!
-  for(fun in funs) 
-  {
-    download.file(fun,destfile = basename(fun))
-    source(paste0(getwd(),"/",basename(fun)))
-    file.remove(paste0(getwd(),"/",basename(fun)))
-  } # end for(un in funs)
+ dir <- tempdir()
+for(fun in funs) 
+{
+  temp <- dir
+  download.file(fun,destfile = paste0(dir, "\\", basename(fun)))
+  source(paste0(dir,"/",basename(fun)))
+  file.remove(paste0(dir,"/",basename(fun)))
+} # end for(un in funs)
 }  
 
 # DK doesn't have a clue what this conversion is but something distancy
@@ -98,7 +100,7 @@ for(i in 1:nrow(tows))
 			for(f in 1:length(gets))
 			{
 			  #Read2 Bring in the file with the bathymetry data in it
-				tmp <-read.table(paste(dirt,"Data/Environmental/Bathymetry/Ger/Bathymetry/gerbk_5/german_",gets[f],".txt",sep=''),header=T)
+				tmp <-read.table(paste("Y:/GISdata/Private/German_bathy_DEM/gerbk_5/german_",gets[f],".txt",sep=''),header=T)
 				# Now set up the location for the tow, note the dpkm, aspr, and kms adjustments that are necessary.
 				locdata.lst[[f]]<-subset(tmp,X<(tows$X[i]+dpkm*aspr*kms)&X>(tows$X[i]-dpkm*aspr*kms)&Y<(tows$Y[i]+dpkm*kms)&Y>(tows$Y[i]-dpkm*kms))
 			} # end for(f in 1:length(gets))
