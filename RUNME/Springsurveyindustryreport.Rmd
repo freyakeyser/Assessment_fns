@@ -1,0 +1,382 @@
+---
+title: "Offshore Scallop Spring Survey Industry Report 2025"
+author: "Tricia Pearo Drew"
+date: "`r format(Sys.Date(), '%b-%d-%Y')`"
+output: 
+  pdf_document: default
+editor_options:
+  chunk_output_type: console
+classoption: landscape
+header-includes:
+   - \usepackage{caption}
+geometry: margin=15mm
+---
+
+This report contains summary information on the distribution and relative abundance of sea scallops that were observed during the 2025 Offshore Scallop Spring Survey. This survey included Georges Bank and the following areas on the Scotian Shelf: Middle Bank, Sable/Western Bank, Browns Bank South, Browns Bank North and German Bank.
+The survey was conducted from May 12th to June 9th aboard the Fundy Leader. This year, 8 of 14 crew were new to the survey. There was a total of 353 stations completed over three survey legs. The first leg consisted of 15 stations on Middle Bank and 100 stations on Sable/Western Bank. The second leg consisted of 24 monitoring stations on Georges Bank, 25 stations on Browns Bank South, 106 stations on Browns Bank North (6 extra stations) and 28 stations on German Bank. The third leg consisted of 55 stations on German Bank (3 extra stations).
+
+
+\newpage
+
+
+```{r setup1, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(sf)
+require(ROracle)
+library(kableExtra)
+require(rnaturalearth)
+require(rnaturalearthdata)
+library(tiff)
+library(data.table)
+require(xlsx)
+
+
+#Connect to database and pull data for industry report
+con= dbConnect(DBI::dbDriver("Oracle"), 'Username', 'Password', 'ptran')
+svydat=dbGetQuery(con, (" select *
+from scaloff.osindustryreport_ss_vw
+where cruise like '%LE21%'")) #change year accordingly
+
+source("Y:/Offshore/Assessment/Assessment_fns/Survey_and_OSAC/convert.dd.dddd.r")
+svydat$LAT<-convert.dd.dddd(svydat$START_LAT,format='dec.deg') #add Latitude column and its #converted location
+svydat$LON<-convert.dd.dddd(svydat$START_LON,format='dec.deg') #add Longitude column and its #converted location
+
+#To find total live and clappers:
+Totallive = c("LIVE_LESS_THAN_70", "LIVE_70_TO_LESS_THAN_100", "LIVE_100_AND_GREATER")
+Totaldead = c("DEAD_LESS_THAN_70", "DEAD_70_TO_LESS_THAN_100", "DEAD_100_AND_GREATER")
+svydat$Total_Live<-rowSums(svydat[,Totallive])
+svydat$Total_Dead<-rowSums(svydat[,Totaldead])
+
+#Add a tow type column
+svydat$TOW_TYPE[svydat$TOW_NO < 899] <- "Regular"
+svydat$TOW_TYPE[svydat$TOW_NO > 900] <- "Extra"
+
+#Change column names
+names(svydat)[names(svydat) == 'MGT_AREA_CD'] <- 'AREA'
+names(svydat)[names(svydat) == 'LIVE_LESS_THAN_70'] <- 'LIVE <70mm'
+names(svydat)[names(svydat) == 'LIVE_70_TO_LESS_THAN_100'] <- 'LIVE 70-100mm'
+names(svydat)[names(svydat) == 'LIVE_100_AND_GREATER'] <- 'LIVE $\\ge$100mm'
+names(svydat)[names(svydat) == 'DEAD_LESS_THAN_70'] <- 'CLAPPERS <70mm'
+names(svydat)[names(svydat) == 'DEAD_70_TO_LESS_THAN_100'] <- 'CLAPPERS 70-100mm'
+names(svydat)[names(svydat) == 'DEAD_100_AND_GREATER'] <- 'CLAPPERS $\\ge$100mm'
+names(svydat)[names(svydat) == 'PCT_CLAPPERS'] <- '% CLAPPERS'
+names(svydat)[names(svydat) == 'CATCH_BASKETS'] <- 'NUMBER OF BASKETS'
+names(svydat)[names(svydat) == 'START_LAT'] <- 'START_LAT_N'
+names(svydat)[names(svydat) == 'START_LON'] <- 'START_LON_W'
+names(svydat)[names(svydat) == 'END_LAT'] <- 'END_LAT_N'
+names(svydat)[names(svydat) == 'END_LON'] <- 'END_LON_W'
+names(svydat)[names(svydat) == 'DEPTH_F'] <- 'DEPTH_FATHOMS'
+```
+
+
+```{r Figure 1, echo=FALSE, message=FALSE, warning=FALSE}
+#Use ifelse() to create new columns that tell you whether the tow has more than the number of #baskets/comm/juveniles specified. Give the column a 1 if it DOES, 0 if it doesn't. Then we can just add #them up with dplyr later. 
+svydat$gr2ba <- ifelse(svydat$`NUMBER OF BASKETS` > 1.99, 1, 0)
+svydat$gr200comm <- ifelse(svydat$`LIVE $\\ge$100mm` > 199, 1, 0)
+svydat$gr500juv <- ifelse(svydat$"LIVE <70mm" > 499, 1, 0)
+
+#Use dplyr to sum up these columns by area and tow type. 
+Table1 <- svydat %>%
+   group_by(CRUISE, AREA, TOW_TYPE) %>%
+   summarise(notow = n_distinct(TOW_NO),
+           live = round(sum(Total_Live)),
+            gr2ba = sum(gr2ba), 
+            gr200comm = sum(gr200comm),
+            gr500juv = sum(gr500juv))
+
+# Can remove NAs and replace with a dash in table, do this before we change the names to keep it cleaner
+Table1$gr500juv[is.na(Table1$gr500juv)] <-  "--"
+Table1$gr2ba[is.na(Table1$gr2ba)] <- "--"
+Table1$gr200comm[is.na(Table1$gr200comm)] <- "--"
+Table1$live[is.na(Table1$live)] <-  "--"
+
+#rename columns in Table1
+Table1names <-c('CRUISE', 'AREA', 'STATION TYPE','NUMBER OF STATIONS', 'TOTAL LIVE SCALLOPS', 'NUMBER OF STATIONS $\\ge$ 2 BASKETS', 'NUMBER OF STATIONS $\\ge$ 200 COMMERCIAL SCALLOPS', 'NUMBER OF STATIONS $\\ge$ 500 JUVENILES')
+names(Table1) <- Table1names
+
+#Put the Regular station above the Extras
+Table1 <- arrange(Table1, AREA, desc(`STATION TYPE`))
+
+#Always put the code below at the end when making a table in kable format
+Table1 %>%
+ kbl(caption = "Bank summaries for the 2025 Offshore Scallop Spring Survey. Scallop numbers are unstandardized. Commercial scallops are defined as $\\ge$ 100mm. Juveniles are < 70mm (slightly under 3 inches) shell height." ,booktabs = TRUE, format='latex', escape=F, linesep = "") %>%
+  column_spec(1:3, width = "1cm") %>%
+  column_spec(4:ncol(Table1), width = "3cm") %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down"))
+
+```
+
+
+```{r table2, echo=FALSE, message=FALSE, warning=FALSE}
+#Make table for each bank (GBa) for catch summary
+table2 <- svydat %>%
+  filter(AREA == "Mid") %>%
+  select(-YEAR,-CRUISE,-SURVEY_NAME,-SPECIES_ID, -Total_Live, -Total_Dead, -gr2ba, -gr200comm, -gr500juv, -LAT, -LON, -TOW_TYPE) %>%
+  #or write column names in order that I want mgt_area, tow_no, etc.in select()
+  arrange(TOW_NO)
+#to change basket 0 to <0.25 when live is >1
+table2$test <- table2$`LIVE <70mm` + table2$`LIVE 70-100mm`+ table2$`LIVE $\\ge$100mm`
+
+#table2$BASKETS[table2$test > 0 & table2$BASKETS == 0] or table2[table2$test > 0 & table2$BASKETS == 0,] $BASKETS
+table2[table2$test > 0 & table2$`NUMBER OF BASKETS` == 0,] $'NUMBER OF BASKETS' <- "<0.25"
+
+cols <- c("LIVE <70mm", "LIVE 70-100mm", "LIVE $\\ge$100mm", "CLAPPERS <70mm", "CLAPPERS 70-100mm", "CLAPPERS $\\ge$100mm","% CLAPPERS")
+
+table2 <- table2 %>%
+   mutate(across(cols, round, 0)) %>%
+  select(-test)
+
+names(table2) <- c("AREA", "TOW NO.", "START LAT (N)", "START LON (W)", "END LAT (N)", "END LON (W)", "DEPTH (F)", "NO. BASKETS", "<70mm", "70-100mm", "$\\ge$100mm", "<70mm", "70-100mm", "$\\ge$100mm", "$\\%$ CLAPPERS")
+
+out2 <- table2
+names(out2) <- c("AREA", "TOW NO.", "START LAT (N)", "START LON (W)", "END LAT (N)", "END LON (W)", "DEPTH (F)", "NO. BASKETS", "LIVE <70mm", "LIVE 70-100mm", "LIVE \u2265 100mm", "CLAPPERS <70mm", "CLAPPERS 70-100mm", "CLAPPERS \u2265 100mm", "% CLAPPERS")
+write.xlsx(out2, file="IndustryReportTablesMid.xlsx", sheetName="Table 2.")
+
+table2 %>% 
+  kbl(caption = "Catch Summary Report for Middle Bank stations surveyed during the 2025 Offshore Scallop Spring Survey. Scallop numbers are unstandardized.",booktabs = TRUE, format="latex", longtable = T, escape=F, linesep = "") %>%
+  add_header_above(c(" "= 8, "LIVE" = 3, "CLAPPERS" = 3, " ")) %>%
+  column_spec(1:2, width = "0.75cm") %>%
+  column_spec(3:6, width = "1.3cm") %>%
+  column_spec(7, width = "1cm") %>%
+  column_spec(8, width = "1.75cm") %>%
+  column_spec(9:14, width = "1cm") %>%
+  column_spec(15, width = "2cm") %>%
+  kable_styling(latex_options = c("HOLD_position", "repeat_header"))#can use striped, basic, etc
+```
+
+
+```{r table3, echo=FALSE, message=FALSE, warning=FALSE}
+#Make table for each bank (GBa) for catch summary
+table3 <- svydat %>%
+  filter(AREA == "Sab") %>%
+  select(-YEAR,-CRUISE,-SURVEY_NAME,-SPECIES_ID, -Total_Live, -Total_Dead, -gr2ba, -gr200comm, -gr500juv, -LAT, -LON, -TOW_TYPE) %>%
+  #or write column names in order that I want mgt_area, tow_no, etc.in select()
+  arrange(TOW_NO)
+#to change basket 0 to <0.25 when live is >1
+table3$test <- table3$`LIVE <70mm` + table3$`LIVE 70-100mm`+ table3$`LIVE $\\ge$100mm`
+
+#table3$BASKETS[table3$test > 0 & table3$BASKETS == 0] or table3[table3$test > 0 & table3$BASKETS == 0,] $BASKETS
+table3[table3$test > 0 & table3$`NUMBER OF BASKETS` == 0,] $'NUMBER OF BASKETS' <- "<0.25"
+
+cols <- c("LIVE <70mm", "LIVE 70-100mm", "LIVE $\\ge$100mm", "CLAPPERS <70mm", "CLAPPERS 70-100mm", "CLAPPERS $\\ge$100mm","% CLAPPERS")
+
+table3 <- table3 %>%
+   mutate(across(cols, round, 0)) %>%
+  select(-test)
+
+names(table3) <- c("AREA", "TOW NO.", "START LAT (N)", "START LON (W)", "END LAT (N)", "END LON (W)", "DEPTH (F)", "NO. BASKETS", "<70mm", "70-100mm", "$\\ge$100mm", "<70mm", "70-100mm", "$\\ge$100mm", "$\\%$ CLAPPERS")
+
+out3 <- table3
+names(out3) <- c("AREA", "TOW NO.", "START LAT (N)", "START LON (W)", "END LAT (N)", "END LON (W)", "DEPTH (F)", "NO. BASKETS", "LIVE <70mm", "LIVE 70-100mm", "LIVE \u2265 100mm", "CLAPPERS <70mm", "CLAPPERS 70-100mm", "CLAPPERS \u2265 100mm", "% CLAPPERS")
+write.xlsx(out3, file="IndustryReportTablesSab.xlsx", sheetName="Table 3.")
+
+table3 %>% 
+  kbl(caption = "Catch Summary Report for Sable Bank stations surveyed during the 2025 Offshore Scallop Spring Survey. Scallop numbers are unstandardized.",booktabs = TRUE, format="latex", longtable = T, escape=F, linesep = "") %>%
+  add_header_above(c(" "= 8, "LIVE" = 3, "CLAPPERS" = 3, " ")) %>%
+  column_spec(1:2, width = "0.75cm") %>%
+  column_spec(3:6, width = "1.3cm") %>%
+  column_spec(7, width = "1cm") %>%
+  column_spec(8, width = "1.75cm") %>%
+  column_spec(9:14, width = "1cm") %>%
+  column_spec(15, width = "2cm") %>%
+  kable_styling(latex_options = c("HOLD_position", "repeat_header"))#can use striped, basic, etc
+```
+
+\newpage
+
+
+```{r table4, echo=FALSE, message=FALSE, warning=FALSE}
+#Make table for each bank (GBa) for catch summary
+table4 <- svydat %>%
+  filter(AREA == "GBa") %>%
+  select(-YEAR,-CRUISE,-SURVEY_NAME,-SPECIES_ID, -Total_Live, -Total_Dead, -gr2ba, -gr200comm, -gr500juv, -LAT, -LON, -TOW_TYPE) %>%
+  #or write column names in order that I want mgt_area, tow_no, etc.in select()
+  arrange(TOW_NO)
+#to change basket 0 to <0.25 when live is >1
+table4$test <- table4$`LIVE <70mm` + table4$`LIVE 70-100mm`+ table4$`LIVE $\\ge$100mm`
+
+#table4$BASKETS[table4$test > 0 & table4$BASKETS == 0] #or table4[table4$test > 0 & table4$BASKETS == 0,] $BASKETS
+table4[table4$test > 0 & table4$`NUMBER OF BASKETS` == 0,] $'NUMBER OF BASKETS' <- "<0.25"
+
+#GBb
+table5 <- svydat %>%
+  filter(AREA == "GBb") %>%
+  select(-YEAR,-CRUISE,-SURVEY_NAME,-SPECIES_ID, -Total_Live, -Total_Dead, -gr2ba, -gr200comm, -gr500juv, -LAT, -LON, -TOW_TYPE) %>%
+  #or write column names in order that I want mgt_area, tow_no, etc.in select()
+  arrange(TOW_NO)
+#to change basket 0 to <0.25 when live is >1
+table5$test <- table5$`LIVE <70mm` + table5$`LIVE 70-100mm`+ table5$`LIVE $\\ge$100mm`
+
+#table5$BASKETS[table5$test > 0 & table5$BASKETS == 0] #or table5[table5$test > 0 & table5$BASKETS == 0,] $BASKETS
+#table5[table5$test > 0 & table5$`NUMBER OF BASKETS` == 0,] $'NUMBER OF BASKETS' <- "<0.25"
+
+#Combine GBa and GBb tables
+table6 <- rbind(table4, table5) %>% 
+  arrange(TOW_NO)
+
+cols <- c("LIVE <70mm", "LIVE 70-100mm", "LIVE $\\ge$100mm", "CLAPPERS <70mm", "CLAPPERS 70-100mm", "CLAPPERS $\\ge$100mm","% CLAPPERS")
+
+table6 <- table6 %>%
+   mutate(across(cols, round, 0)) %>%
+  select(-test)
+
+names(table6) <- c("AREA", "TOW NO.", "START LAT (N)", "START LON (W)", "END LAT (N)", "END LON (W)", "DEPTH (F)", "NO. BASKETS", "<70mm", "70-100mm", "$\\ge$100mm", "<70mm", "70-100mm", "$\\ge$100mm", "$\\%$ CLAPPERS")
+
+out6 <- table6
+names(out6) <- c("AREA", "TOW NO.", "START LAT (N)", "START LON (W)", "END LAT (N)", "END LON (W)", "DEPTH (F)", "NO. BASKETS", "LIVE <70mm", "LIVE 70-100mm", "LIVE \u2265 100mm", "CLAPPERS <70mm", "CLAPPERS 70-100mm", "CLAPPERS \u2265 100mm", "% CLAPPERS")
+write.xlsx(out6, file="IndustryReportTablesGBMon.xlsx", sheetName="Table 4.")
+
+table6 %>% 
+  kbl(caption = "Catch Summary Report for Georges Bank Monitoring stations surveyed during the 2025 Offshore Scallop Spring Survey. Scallop numbers are unstandardized.",booktabs = TRUE, format="latex", longtable = T, escape=F, linesep = "") %>%
+  add_header_above(c(" "= 8, "LIVE" = 3, "CLAPPERS" = 3, " ")) %>%
+  column_spec(1:2, width = "0.75cm") %>%
+  column_spec(3:6, width = "1.3cm") %>%
+  column_spec(7, width = "1cm") %>%
+  column_spec(8, width = "1.75cm") %>%
+  column_spec(9:14, width = "1cm") %>%
+  column_spec(15, width = "2cm") %>%
+  kable_styling(latex_options = c("HOLD_position", "repeat_header"))#can use striped, basic, etc
+```
+
+\newpage
+
+
+```{r table5, echo=FALSE, message=FALSE, warning=FALSE}
+#Make table for each bank (GBa) for catch summary
+table7 <- svydat %>%
+  filter(AREA == "BBs") %>%
+  select(-YEAR,-CRUISE,-SURVEY_NAME,-SPECIES_ID, -Total_Live, -Total_Dead, -gr2ba, -gr200comm, -gr500juv, -LAT, -LON, -TOW_TYPE) %>%
+  #or write column names in order that I want mgt_area, tow_no, etc.in select()
+  arrange(TOW_NO)
+#to change basket 0 to <0.25 when live is >1
+table7$test <- table7$`LIVE <70mm` + table7$`LIVE 70-100mm`+ table7$`LIVE $\\ge$100mm`
+
+#table7$BASKETS[table7$test > 0 & table7$BASKETS == 0] or table7[table7$test > 0 & table7$BASKETS == 0,] $BASKETS
+table7[table7$test > 0 & table7$`NUMBER OF BASKETS` == 0,] $'NUMBER OF BASKETS' <- "<0.25"
+
+cols <- c("LIVE <70mm", "LIVE 70-100mm", "LIVE $\\ge$100mm", "CLAPPERS <70mm", "CLAPPERS 70-100mm", "CLAPPERS $\\ge$100mm","% CLAPPERS")
+
+table7 <- table7 %>%
+   mutate(across(cols, round, 0)) %>%
+  select(-test)
+
+names(table7) <- c("AREA", "TOW NO.", "START LAT (N)", "START LON (W)", "END LAT (N)", "END LON (W)", "DEPTH (F)", "NO. BASKETS", "<70mm", "70-100mm", "$\\ge$100mm", "<70mm", "70-100mm", "$\\ge$100mm", "$\\%$ CLAPPERS")
+
+out7 <- table7
+names(out7) <- c("AREA", "TOW NO.", "START LAT (N)", "START LON (W)", "END LAT (N)", "END LON (W)", "DEPTH (F)", "NO. BASKETS", "LIVE <70mm", "LIVE 70-100mm", "LIVE \u2265 100mm", "CLAPPERS <70mm", "CLAPPERS 70-100mm", "CLAPPERS \u2265 100mm", "% CLAPPERS")
+write.xlsx(out7, file="IndustryReportTablesBBs.xlsx", sheetName="Table 5.")
+
+table7 %>% 
+  kbl(caption = "Catch Summary Report for Browns Bank South stations surveyed during the 2025 Offshore Scallop Spring Survey.  Scallop numbers are unstandardized.",booktabs = TRUE, format="latex", longtable = T, escape=F, linesep = "") %>%
+  add_header_above(c(" "= 8, "LIVE" = 3, "CLAPPERS" = 3, " ")) %>%
+  column_spec(1:2, width = "0.75cm") %>%
+  column_spec(3:6, width = "1.3cm") %>%
+  column_spec(7, width = "1cm") %>%
+  column_spec(8, width = "1.75cm") %>%
+  column_spec(9:14, width = "1cm") %>%
+  column_spec(15, width = "2cm") %>%
+  kable_styling(latex_options = c("HOLD_position", "repeat_header"))#can use striped, basic, etc
+```
+
+\newpage
+
+
+```{r table6, echo=FALSE, message=FALSE, warning=FALSE}
+#Make table for each bank (GBa) for catch summary
+table8 <- svydat %>%
+  filter(AREA == "BBn") %>%
+  select(-YEAR,-CRUISE,-SURVEY_NAME,-SPECIES_ID, -Total_Live, -Total_Dead, -gr2ba, -gr200comm, -gr500juv, -LAT, -LON, -TOW_TYPE) %>%
+  #or write column names in order that I want mgt_area, tow_no, etc.in select()
+  arrange(TOW_NO)
+#to change basket 0 to <0.25 when live is >1
+table8$test <- table8$`LIVE <70mm` + table8$`LIVE 70-100mm`+ table8$`LIVE $\\ge$100mm`
+
+#table8$BASKETS[table8$test > 0 & table8$BASKETS == 0] or table8[table8$test > 0 & table8$BASKETS == 0,] $BASKETS
+table8[table8$test > 0 & table8$`NUMBER OF BASKETS` == 0,] $'NUMBER OF BASKETS' <- "<0.25"
+
+cols <- c("LIVE <70mm", "LIVE 70-100mm", "LIVE $\\ge$100mm", "CLAPPERS <70mm", "CLAPPERS 70-100mm", "CLAPPERS $\\ge$100mm","% CLAPPERS")
+
+table8 <- table8 %>%
+   mutate(across(cols, round, 0)) %>%
+  select(-test)
+
+names(table8) <- c("AREA", "TOW NO.", "START LAT (N)", "START LON (W)", "END LAT (N)", "END LON (W)", "DEPTH (F)", "NO. BASKETS", "<70mm", "70-100mm", "$\\ge$100mm", "<70mm", "70-100mm", "$\\ge$100mm", "$\\%$ CLAPPERS")
+
+out8 <- table8
+names(out8) <- c("AREA", "TOW NO.", "START LAT (N)", "START LON (W)", "END LAT (N)", "END LON (W)", "DEPTH (F)", "NO. BASKETS", "LIVE <70mm", "LIVE 70-100mm", "LIVE \u2265 100mm", "CLAPPERS <70mm", "CLAPPERS 70-100mm", "CLAPPERS \u2265 100mm", "% CLAPPERS")
+write.xlsx(out8, file="IndustryReportTablesBBn.xlsx", sheetName="Table 6.")
+
+table8 %>% 
+  kbl(caption = "Catch Summary Report for Browns Bank North stations surveyed during the 2025 Offshore Scallop Spring Survey. Stations 901, 902, 903, 904, 905 and 906 were extra stations. Scallop numbers are unstandardized.",booktabs = TRUE, format="latex", longtable = T, escape=F, linesep = "") %>%
+  add_header_above(c(" "= 8, "LIVE" = 3, "CLAPPERS" = 3, " ")) %>%
+  column_spec(1:2, width = "0.75cm") %>%
+  column_spec(3:6, width = "1.3cm") %>%
+  column_spec(7, width = "1cm") %>%
+  column_spec(8, width = "1.75cm") %>%
+  column_spec(9:14, width = "1cm") %>%
+  column_spec(15, width = "2cm") %>%
+  kable_styling(latex_options = c("HOLD_position", "repeat_header"))#can use striped, basic, etc
+```
+
+
+
+
+```{r table7, echo=FALSE, message=FALSE, warning=FALSE}
+#Make table for each bank (GBa) for catch summary
+table9 <- svydat %>%
+  filter(AREA == "Ger") %>%
+  select(-YEAR,-CRUISE,-SURVEY_NAME,-SPECIES_ID, -Total_Live, -Total_Dead, -gr2ba, -gr200comm, -gr500juv, -LAT, -LON, -TOW_TYPE) %>%
+  #or write column names in order that I want mgt_area, tow_no, etc.in select()
+  arrange(TOW_NO)
+#to change basket 0 to <0.25 when live is >1
+table9$test <- table9$`LIVE <70mm` + table9$`LIVE 70-100mm`+ table9$`LIVE $\\ge$100mm`
+
+#table9$BASKETS[table9$test > 0 & table9$BASKETS == 0] or table9[table9$test > 0 & table9$BASKETS == 0,] $BASKETS
+table9[table9$test > 0 & table9$`NUMBER OF BASKETS` == 0,] $'NUMBER OF BASKETS' <- "<0.25"
+
+cols <- c("LIVE <70mm", "LIVE 70-100mm", "LIVE $\\ge$100mm", "CLAPPERS <70mm", "CLAPPERS 70-100mm", "CLAPPERS $\\ge$100mm","% CLAPPERS")
+
+table9 <- table9 %>%
+   mutate(across(cols, round, 0)) %>%
+  select(-test)
+
+names(table9) <- c("AREA", "TOW NO.", "START LAT (N)", "START LON (W)", "END LAT (N)", "END LON (W)", "DEPTH (F)", "NO. BASKETS", "<70mm", "70-100mm", "$\\ge$100mm", "<70mm", "70-100mm", "$\\ge$100mm", "$\\%$ CLAPPERS")
+
+out9 <- table9
+names(out9) <- c("AREA", "TOW NO.", "START LAT (N)", "START LON (W)", "END LAT (N)", "END LON (W)", "DEPTH (F)", "NO. BASKETS", "LIVE <70mm", "LIVE 70-100mm", "LIVE \u2265 100mm", "CLAPPERS <70mm", "CLAPPERS 70-100mm", "CLAPPERS \u2265 100mm", "% CLAPPERS")
+write.xlsx(out9, file="IndustryReportTablesGer.xlsx", sheetName="Table 7.")
+
+table9 %>% 
+  kbl(caption = "Catch Summary Report for German Bank stations surveyed during the 2025 Offshore Scallop Spring Survey. Stations 901, 902 and 903 were extra stations. Scallop numbers are unstandardized.",booktabs = TRUE, format="latex", longtable = T, escape=F, linesep = "") %>%
+  add_header_above(c(" "= 8, "LIVE" = 3, "CLAPPERS" = 3, " ")) %>%
+  column_spec(1:2, width = "0.75cm") %>%
+  column_spec(3:6, width = "1.3cm") %>%
+  column_spec(7, width = "1cm") %>%
+  column_spec(8, width = "1.75cm") %>%
+  column_spec(9:14, width = "1cm") %>%
+  column_spec(15, width = "2cm") %>%
+  kable_styling(latex_options = c("HOLD_position", "repeat_header"))#can use striped, basic, etc
+```
+
+
+\newpage
+
+```{r Tracks1, echo=FALSE, warning=FALSE, fig.align = 'center', out.width = "90%", fig.cap=paste("Middle Bank Tow Tracks in 2025")}
+knitr::include_graphics("Y:/Offshore/Assessment/Data/Survey_data/2025/Industry Reports/MidLE21.png")
+```
+```{r Tracks2, echo=FALSE, warning=FALSE, fig.align = 'center', out.width = "80%", fig.cap=paste("Sable Bank Tow Tracks in 2025")}
+knitr::include_graphics("Y:/Offshore/Assessment/Data/Survey_data/2025/Industry Reports/SabLE21.png")
+```
+```{r Tracks3, echo=FALSE, warning=FALSE, fig.align = 'center', out.width = "80%", fig.cap=paste("Georges Bank Monitoring Stations Tow Tracks in 2025")}
+knitr::include_graphics("Y:/Offshore/Assessment/Data/Survey_data/2025/Industry Reports/GBMonLE21.png")
+```
+```{r Tracks4, echo=FALSE, warning=FALSE, fig.align = 'center', out.width = "80%", fig.cap=paste("Browns Bank South Tow Tracks in 2025")}
+knitr::include_graphics("Y:/Offshore/Assessment/Data/Survey_data/2025/Industry Reports/BBsLE21.png")
+```
+```{r Tracks5, echo=FALSE, warning=FALSE, fig.align = 'center', out.width = "80%", fig.cap=paste("Browns Bank North Tow Tracks in 2025")}
+knitr::include_graphics("Y:/Offshore/Assessment/Data/Survey_data/2025/Industry Reports/BBnLE21.png")
+```
+```{r Tracks6, echo=FALSE, warning=FALSE, fig.align = 'center', out.width = "80%", fig.cap=paste("German Bank Tow Tracks in 2025")}
+knitr::include_graphics("Y:/Offshore/Assessment/Data/Survey_data/2025/Industry Reports/GerLE21.png")
+```
