@@ -542,7 +542,7 @@ for(fun in funs)
     } # end if(banks[i] %in% c("Sab")) 
     
     # Get the strata areas.  For most areas we use the survey.strata.table which is output from the data function
-    if(banks[i] %in% c("GBa","GBb","BBs",spat.name)) strata.areas <- subset(survey.strata.table[[banks[i]]],select =c("PID","towable_area"))
+    if(banks[i] %in% c("GBa","GBb",spat.name)) strata.areas <- subset(survey.strata.table[[banks[i]]],select =c("PID","towable_area"))
     
     if(banks[i] %in% c("Sab") & !yr < max(survey.info$startyear[survey.info$label=="Sab"])) {
       strata.areas <- subset(survey.info[!(survey.info$startyear==1900 & survey.info$label=="Sab"),], label==banks[i],select =c("PID","towable_area"))}
@@ -553,6 +553,11 @@ for(fun in funs)
       strata.areas <- subset(survey.info[!(survey.info$startyear==1900 & survey.info$label=="BBn"),], label==banks[i],select =c("PID","towable_area"))}
     if(banks[i] %in% c("BBn") & yr < max(survey.info$startyear[survey.info$label=="BBn"])) {
       strata.areas <- subset(survey.info[!(survey.info$startyear==2021 & survey.info$label=="BBn"),], label==banks[i],select =c("PID","towable_area"))}
+    #BBs areas were corrected in 2023
+    if(banks[i] %in% c("BBs") & !yr < max(survey.info$startyear[survey.info$label=="BBs"])) {
+      strata.areas <- subset(survey.info[!(survey.info$startyear==1900 & survey.info$label=="BBs"),], label==banks[i],select =c("PID","towable_area"))}
+    if(banks[i] %in% c("BBs") & yr < max(survey.info$startyear[survey.info$label=="BBs"])) {
+      strata.areas <- subset(survey.info[!(survey.info$startyear==2023 & survey.info$label=="BBs"),], label==banks[i],select =c("PID","towable_area"))}
     if(banks[i] %in% c("GB", "Mid", "Ger", "Ban", "BanIce")) strata.areas <- NULL
     
     #Get all the details of the survey strata
@@ -566,7 +571,12 @@ for(fun in funs)
     if(banks[i] %in% c("BBn") & yr < max(survey.info$startyear[survey.info$label=="BBn"])) {
       surv.info <- survey.info[!(survey.info$startyear==2021) & survey.info$label=="BBn",]}
     
-    if(!banks[i] %in% c("Sab", "BBn")) surv.info <- survey.strata.table[[banks[i]]]
+    if(banks[i] %in% c("BBs") & !yr < max(survey.info$startyear[survey.info$label=="BBs"])) {
+      surv.info <- survey.info[survey.info$startyear==2023 & survey.info$label=="BBs",]}
+    if(banks[i] %in% c("BBs") & yr < max(survey.info$startyear[survey.info$label=="BBs"])) {
+      surv.info <- survey.info[!(survey.info$startyear==2023) & survey.info$label=="BBs",]}
+    
+    if(!banks[i] %in% c("Sab", "BBn", "BBs")) surv.info <- survey.strata.table[[banks[i]]]
     
     ### If we are missing years in the data I want to add those years in as NA's so the plots see those as NA's  ####
     check.year <- min(survey.obj[[banks[i]]][[1]]$year,na.rm=T):max(survey.obj[[banks[i]]][[1]]$year,na.rm=T)
@@ -1113,17 +1123,17 @@ for(fun in funs)
                 # fitted[[spatial.maps[k]]] <- data.frame(fitted = mod$summary.fitted.values$mean[1:length(tmp.gp$cur.mw)],
                 #                                         dat= tmp.gp$cur.mw)
               } # end if(spatial.maps[k] %in% c("MW-spatial", "SH-spatial", "MW.GP-spatial", "SH.GP-spatial"))  
-                bbox <- st_bbox(bound.poly.surv.sf)
-                res <- 0.2
-                if(s.res[1]==25) res<-1
-                newdata <- expand.grid(X=seq(floor(bbox$xmin/1000), ceiling(bbox$xmax/1000), res), Y=seq(floor(bbox$ymin/1000), ceiling(bbox$ymax/1000), 0.2))
-                mod.res[[spatial.maps[k]]] <- predict(fitted[[spatial.maps[k]]], newdata=newdata, type="response", se.fit=T)
-                
-                if(spatial.maps[k]=="Clap-spatial" & fitted[[spatial.maps[k]]]$family[[1]]=="binomial") mod.res[[spatial.maps[k]]]$est <- mod.res[[spatial.maps[k]]]$est*100
-                mod.res[[spatial.maps[k]]]$X <-  mod.res[[spatial.maps[k]]]$X*1000
-                mod.res[[spatial.maps[k]]]$Y <-  mod.res[[spatial.maps[k]]]$Y*1000
-                # mod.res[[spatial.maps[k]]] <- 
-                #   exp(mod$summary.random$s$mean + mod$summary.fixed$mean)
+              bbox <- st_bbox(bound.poly.surv.sf)
+              res <- 0.2
+              if(s.res[1]==25) res<-1
+              newdata <- expand.grid(X=seq(floor(bbox$xmin/1000), ceiling(bbox$xmax/1000), res), Y=seq(floor(bbox$ymin/1000), ceiling(bbox$ymax/1000), res))
+              mod.res[[spatial.maps[k]]] <- predict(fitted[[spatial.maps[k]]], newdata=newdata, type="response", se.fit=T)
+              
+              if(spatial.maps[k]=="Clap-spatial" & fitted[[spatial.maps[k]]]$family[[1]]=="binomial") mod.res[[spatial.maps[k]]]$est <- mod.res[[spatial.maps[k]]]$est*100
+              mod.res[[spatial.maps[k]]]$X <-  mod.res[[spatial.maps[k]]]$X*1000
+              mod.res[[spatial.maps[k]]]$Y <-  mod.res[[spatial.maps[k]]]$Y*1000
+              # mod.res[[spatial.maps[k]]] <- 
+              #   exp(mod$summary.random$s$mean + mod$summary.fixed$mean)
               
               # print a message if the model didn't work:
               if(max(mod.res[[spatial.maps[k]]]$est, na.rm=T) == "Inf") stop(paste0("Inf predictions in mod.res[[spatial.maps[k]]]. Please try a different mesh for ", banks[i], " ", spatial.maps[k], ".\nRecommend changing inla.mesh.2d max.edge argument very slightly."))
@@ -1269,7 +1279,8 @@ for(fun in funs)
         {
           save(mod.res,mesh,fitted,
                file = paste(direct,"Data/Survey_data/", yr, "/Survey_summary_output/",banks[i],"/", banks[i],"_figures_res_",s.res[1],"-",s.res[2], ".RData",sep=""))
-        } # end if(save.INLA ==T) 
+        browser()
+          } # end if(save.INLA ==T) 
         
         
         #######################  FIGURES#######################  FIGURES#######################  FIGURES#######################  FIGURES ##################
@@ -1877,7 +1888,6 @@ for(fun in funs)
       cap.size <- ifelse(banks[i] == "BanIce",1.9,2)
   
       ############
-
       #Source12 Meat Height Shell weight plot on Slide 13  source("fn/shwt.plt1.r") 
       if(layout=="portrait"){
         if(fig == "screen") windows(8,13)
@@ -1893,7 +1903,7 @@ for(fun in funs)
         if(fig == "pdf") pdf(paste(plot.dir,"/MWSH_and_CF_ts_wide.pdf",sep=""),width = 13,height = 8.5)
       }
       
-      if(layout=="portrait") par(mfrow=c(2,1))
+      if(layout=="portrait") par(mfrow=c(2,1), omi=c(0.3,0.6,0.3,0.2))
       if(layout=="landscape") par(mfrow=c(1,2))
 
         if(banks[i] %in% c("GBa", "GB") | banks[i] %in% spat.name) shwt.plt1(SpatHtWt.fit[[banks[i]]],lw=3,ht=10,wd=12,cx=1.5,titl = MWSH.title,cex.mn = cap.size,las=1)
@@ -2085,7 +2095,7 @@ for(fun in funs)
       if(add.title == F) survey.ts.N.title <- ""
       if(fig == "screen") windows(8.5,11)
       
-      if(fig == "png")png(paste(plot.dir,"/abundance_ts_total.png",sep=""),units="in",
+      if(fig == "png")png(paste(plot.dir,"/abundance_ts.png",sep=""),units="in",
                           width = 8.5, height = 11,res=420,bg="transparent")
       if(fig == "pdf") pdf(paste(plot.dir,"/abundance_ts.pdf",sep=""),width = 8.5, height = 11)
       
