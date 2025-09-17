@@ -152,6 +152,8 @@ for(fun in funs)
     
     towchecks <- function(tows, icetow=NULL){
       
+      if(!unique(tows$CRUISE) == cruise) print("Wrong cruise in the tow file!")
+      
       message("Are there empty rows at the bottom of the Tow dataframe? If so, go back to your spreadsheet and delete empty rows.")
       print(tail(tows))
 
@@ -556,6 +558,8 @@ Check the MGT_AREA_CD values for the following tows:")
     
     hfchecks <- function(hfs, tows){
       
+      if(!unique(hfs$CRUISE) == cruise) print("Wrong cruise in the HF file!")
+      
       message("Are there empty rows at the bottom of the HF dataframe? If so, go back to your spreadsheet and delete empty rows.")
       print(tail(hfs))
       
@@ -748,6 +752,8 @@ Check the MGT_AREA_CD values for the following tows:")
   if(mwsh==TRUE){
     
     mwshchecks<- function(mwshs){
+      
+      if(!unique(mwshs$CRUISE) == cruise) print("Wrong cruise in the HF file!")
       
       message("Are there empty rows at the bottom of the MWSH dataframe? If so, go back to your spreadsheet and delete empty rows.")
       print(tail(mwshs))

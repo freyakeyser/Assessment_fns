@@ -1,6 +1,6 @@
 # For Detailed Tow Data (for SPANS, usually right after Industry report)
 year<- 2025
-DR <- "DR2025_07_StdData"
+DR <- "DR2025_09_StdData2"
 direct <- "C:/Users/keyserf/Documents/temp_data"
 #load(paste0(direct, "/Data/Survey_data/", year, "/Survey_summary_output/testing_results_spring2025.Rdata"))
 

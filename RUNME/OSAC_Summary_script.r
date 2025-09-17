@@ -24,7 +24,7 @@
 direct <- "C:/Users/keyserf/Documents/temp_data/"
 direct_fns <- "C:/Users/keyserf/Documents/Github/Assessment_fns/"
 
-yr <- 2024
+yr <- 2025
 
 # Load the function...
 source(paste(direct_fns,"Survey_and_OSAC/OSAC_summary.r",sep = ""))
@@ -32,9 +32,9 @@ source(paste(direct_fns,"Survey_and_OSAC/OSAC_summary.r",sep = ""))
 # This will take more than 10 minutes when using GBa as it takes a while to do the jackknife for the CPUE on GBa.
 # Note that this will lead to an error if there was no fishing on a bank in a given year so make sure you remove any
 # banks that don't have fishery data for the current year!
-OSAC_summary(direct = direct,direct_fns=direct_fns,un=un.ID,pw=pwd.ID,db.con="ptran",yr=2024,
-             bank ="all",
-             save.fig = F,save.res=F,export=F, calc.mc = T, rdata.logs=F)
+OSAC_summary(direct = direct,direct_fns=direct_fns,un=un.ID,pw=pwd.ID,db.con="ptran",yr=2025,
+             bank ="Ger",
+             save.fig = T,save.res=T,export=F, calc.mc = T, rdata.logs=F)
 
 OSAC_summary(direct = direct,un=un.ID,pw=pwd.ID,db.con="ptran",yr=2019,
              bank = c("Sab", "Ban"),

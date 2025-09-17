@@ -320,7 +320,7 @@ spatial.stats.detail <- rbind(spatial.stats.detail, mc)
 
 The spatial distributions of pre-recruit, recruit, and fully-recruited scallop are shown in Figures `r fignum[7]` - `r fignum[9]`, and statistical summaries are in Table `r tabnum[4]`. Maps are based on a geostatistical model that uses a Gaussian Markov Random Field (GMRF) to predict the spatial distribution. These models may not represent the full range of values observed during the survey.
 
-Note that in spring 2025, the geostatistical models were generated using the *sdmTMB* package in R. Previously, the *inla* package was used. 
+Starting in the spring of 2025, the geostatistical models were generated using the *sdmTMB* package in R. Previously, the *inla* package was used. 
 
 ```{r, echo=F, warning=F}
 table <- spatial.stats.abund

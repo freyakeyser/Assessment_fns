@@ -18,7 +18,7 @@ direct <- "Y:/Offshore/Assessment/"
 # direct_fns <- "Y:/Github/Offshore/Assessment_fns/FK/"
 direct_fns <- "C:/Users/keyserf/Documents/Github/Assessment_fns/"
 
-year <- c(2022)
+year <- c(2025)
 
 source(paste0(direct_fns, "Fishery/CPUE_monthly_or_observer.R"))
 
@@ -27,7 +27,7 @@ source(paste0(direct_fns, "Fishery/CPUE_monthly_or_observer.R"))
 banks <- c("GBa", "GBb", "Sab", "Ger", "Mid", "BBn", "BBs", "Ban", 
   "SPB") # pick your banks
 fleets <- c("FT", "WF") # pick your fleets
-marfis = T # T for pull from marfis (uncorrected), F for pull from log and slip csvs (corrected)
+marfis = F # T for pull from marfis (uncorrected), F for pull from log and slip csvs (corrected)
 # un.ID <- ""
 # pwd.ID <-""
 

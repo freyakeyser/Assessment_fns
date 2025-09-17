@@ -886,36 +886,33 @@ for(fun in funs)
           # if we have maps to be made and we aren't simply loading in the INLA results we need to run this bit.
           if(length(spatial.maps) > 0)
           {
+            browser()
             # Get the data needed....
             if(banks[i] %in% c("GBb", "GBa")) 
             {
               tmp.dat <- dplyr::full_join(surv.Live[["GBa"]][surv.Live[["GBa"]]$year == yr,],surv.Live[["GBb"]][surv.Live[["GBb"]]$year == yr,])
               tmp.clap <- dplyr::full_join(surv.Clap[["GBa"]][surv.Clap[["GBa"]]$year == yr,],surv.Clap[["GBb"]][surv.Clap[["GBb"]]$year == yr,])
-            }  # end if(banks[i] %in% c("GBb","GBa")) 
-            
-            if(banks[i] %in% c("GBa")) 
-            {
-              tmp.cf <- CF.current[[banks[i]]][CF.current[[banks[i]]]$year == yr,]
-              tmp.gp <- pot.grow[[banks[i]]][pot.grow[[banks[i]]]$year == yr,]
+              tmp.cf <- dplyr::full_join(CF.current[["GBa"]][CF.current[["GBa"]]$year == yr,], CF.current[["GBb"]][CF.current[["GBb"]]$year == yr,])
+              tmp.gp <- dplyr::full_join(pot.grow[["GBa"]][pot.grow[["GBa"]]$year == yr,], pot.grow[["GBb"]][pot.grow[["GBb"]]$year == yr,])
+              tmp.cf <- dplyr::left_join(tmp.dat[,c("tow", "lon", "lat")], tmp.cf)
+              tmp.gp <- dplyr::left_join(tmp.dat[,c("tow", "lon", "lat")], tmp.gp)
             } 
             
-            if(banks[i] %in% c("Mid","Sab","Ger","BBn","BBs","Ban","BanIce","SPB","GB", "GBb")) 
+            if(!banks[i] %in% c("GBa", "GBb")) 
             {  
-              if(!banks[i] %in% "GBb") tmp.dat <- surv.Live[[banks[i]]][surv.Live[[banks[i]]]$year == yr,]
+              tmp.dat <- surv.Live[[banks[i]]][surv.Live[[banks[i]]]$year == yr,]
               tmp.cf <-  CF.current[[banks[i]]][CF.current[[banks[i]]]$year == yr,]
-              if(!banks[i] %in% "GBb") tmp.clap <- surv.Clap[[banks[i]]][surv.Clap[[banks[i]]]$year == yr,]
+              tmp.clap <- surv.Clap[[banks[i]]][surv.Clap[[banks[i]]]$year == yr,]
+              tmp.cf <- dplyr::left_join(tmp.dat[,c("tow", "lon", "lat")], tmp.cf)
               if(!banks[i] == "BanIce") tmp.gp <- pot.grow[[banks[i]]][pot.grow[[banks[i]]]$year == yr,]
               if(banks[i]=="GB") tmp.gp <- na.omit(pot.grow[[banks[i]]][pot.grow[[banks[i]]]$year == yr,])
+              tmp.gp <- dplyr::left_join(tmp.dat[,c("tow", "lon", "lat")], tmp.gp)
             } # end if(banks[i] %in% c("Mid","Sab","Ger","BBn","BBs","Ban","BanIce","SPB","GB")) 
             tmp.dat <- add_utm_columns(tmp.dat, c("lon", "lat"), utm_crs=st_crs(loc.sf))
             tmp.cf <- add_utm_columns(tmp.cf, c("lon", "lat"), utm_crs=st_crs(loc.sf))
             tmp.clap <- add_utm_columns(tmp.clap, c("lon", "lat"), utm_crs=st_crs(loc.sf))
             tmp.gp <- left_join(tmp.dat[,c("tow", "X","Y")], tmp.gp)
             
-            if(banks[i] %in% c("Mid", "GB")) {
-              tmp.cf <- tmp.dat
-            }
-
             # Now loop through each spatial map we want to make.
             fitted <- NULL
             for(k in 1:length(spatial.maps))
@@ -1279,7 +1276,7 @@ for(fun in funs)
         {
           save(mod.res,mesh,fitted,
                file = paste(direct,"Data/Survey_data/", yr, "/Survey_summary_output/",banks[i],"/", banks[i],"_figures_res_",s.res[1],"-",s.res[2], ".RData",sep=""))
-        browser()
+        
           } # end if(save.INLA ==T) 
         
         
@@ -1642,31 +1639,14 @@ for(fun in funs)
               p3 <- p2 + geom_sf(data=surv,aes(shape=`Tow type`),size=2) + scale_shape_manual(values = shp) + coord_sf(expand=F) +
                 theme(legend.key = element_rect(fill=NA))
             }
-      
+            
             if(maps.to.make[m] %in% c("MW.GP-spatial","MW-spatial","CF-spatial","MC-spatial"))
             {
-              if(banks[i]=="GBa") {
                 surv <- st_as_sf(CF.current[[banks[i]]],coords = c('lon','lat'),crs = 4326)
                 surv <- st_transform(surv,crs = st_crs(loc.sf)$epsg)
                 surv$`Tow type` <- paste0('detailed (n = ',nrow(surv),")")
-                surv$shp<-21
-              }
-              if(!banks[i]=="GBa"){
-                surv <- st_as_sf(surv.Live[[banks[i]]],coords = c('slon','slat'),crs = 4326,remove=F) %>% 
-                  dplyr::filter(year == yr & state == 'live')
-                surv <- st_transform(surv,crs = st_crs(loc.sf)$epsg)
-                surv$`Tow type` <- paste0('regular (n = ',length(surv$random[surv$random==1]),")")
-                if(banks[i] != 'Ger') surv$`Tow type`[surv$random != 1] <- paste0('exploratory (n = ',length(surv$random[surv$random!=1]),")")
-                if(banks[i] == 'Ger') surv$`Tow type`[!surv$random %in% c(1,3)] <- paste0('exploratory (n = ',length(surv$random[!surv$random %in% c(1,3)]),")")
-                if(banks[i] == 'Ger') surv$`Tow type`[surv$random == 3] <- paste0('repeated (n = ',length(surv$random[surv$random==3]),")")
-                # Get the shapes for symbols we want, this should do what we want for all cases we've ever experienced...
-                if(length(unique(surv$`Tow type`)) ==1) shp <- 21
-                if(length(unique(surv$`Tow type`)) ==2) shp <- c(17,21)
-                if(length(unique(surv$`Tow type`)) ==3) shp <- c(17,21,15)
-                if(banks[i] == "Ger" & length(shp) == 2) shp <- c(21,15)
-              }
-              p3 <- p2 + geom_sf(data=surv,aes(shape=`Tow type`),size=2) + scale_shape_manual(values = shp) + coord_sf(expand=F) +
-                theme(legend.key = element_rect(fill=NA))
+                p3 <- p2 + geom_sf(data=surv,aes(shape=`Tow type`),size=2) + scale_shape_manual(values = 21) + coord_sf(expand=F) +
+                  theme(legend.key = element_rect(fill=NA))
             }
             
             ## NEXT UP FIGURE OUT THE SEEDBOXES!
