@@ -886,7 +886,6 @@ for(fun in funs)
           # if we have maps to be made and we aren't simply loading in the INLA results we need to run this bit.
           if(length(spatial.maps) > 0)
           {
-            browser()
             # Get the data needed....
             if(banks[i] %in% c("GBb", "GBa")) 
             {
@@ -896,22 +895,24 @@ for(fun in funs)
               tmp.gp <- dplyr::full_join(pot.grow[["GBa"]][pot.grow[["GBa"]]$year == yr,], pot.grow[["GBb"]][pot.grow[["GBb"]]$year == yr,])
               tmp.cf <- dplyr::left_join(tmp.dat[,c("tow", "lon", "lat")], tmp.cf)
               tmp.gp <- dplyr::left_join(tmp.dat[,c("tow", "lon", "lat")], tmp.gp)
-            } 
+            }  # end if(banks[i] %in% c("GBb","GBa")) 
             
-            if(!banks[i] %in% c("GBa", "GBb")) 
+            if(banks[i] %in% c("Mid","Sab","Ger","BBn","BBs","Ban","BanIce","SPB","GB")) 
             {  
               tmp.dat <- surv.Live[[banks[i]]][surv.Live[[banks[i]]]$year == yr,]
               tmp.cf <-  CF.current[[banks[i]]][CF.current[[banks[i]]]$year == yr,]
               tmp.clap <- surv.Clap[[banks[i]]][surv.Clap[[banks[i]]]$year == yr,]
-              tmp.cf <- dplyr::left_join(tmp.dat[,c("tow", "lon", "lat")], tmp.cf)
               if(!banks[i] == "BanIce") tmp.gp <- pot.grow[[banks[i]]][pot.grow[[banks[i]]]$year == yr,]
               if(banks[i]=="GB") tmp.gp <- na.omit(pot.grow[[banks[i]]][pot.grow[[banks[i]]]$year == yr,])
-              tmp.gp <- dplyr::left_join(tmp.dat[,c("tow", "lon", "lat")], tmp.gp)
             } # end if(banks[i] %in% c("Mid","Sab","Ger","BBn","BBs","Ban","BanIce","SPB","GB")) 
             tmp.dat <- add_utm_columns(tmp.dat, c("lon", "lat"), utm_crs=st_crs(loc.sf))
             tmp.cf <- add_utm_columns(tmp.cf, c("lon", "lat"), utm_crs=st_crs(loc.sf))
             tmp.clap <- add_utm_columns(tmp.clap, c("lon", "lat"), utm_crs=st_crs(loc.sf))
             tmp.gp <- left_join(tmp.dat[,c("tow", "X","Y")], tmp.gp)
+            
+            if(banks[i] %in% c("Mid", "GB")) {
+              tmp.cf <- tmp.dat
+            }
             
             # Now loop through each spatial map we want to make.
             fitted <- NULL
@@ -1276,8 +1277,7 @@ for(fun in funs)
         {
           save(mod.res,mesh,fitted,
                file = paste(direct,"Data/Survey_data/", yr, "/Survey_summary_output/",banks[i],"/", banks[i],"_figures_res_",s.res[1],"-",s.res[2], ".RData",sep=""))
-        
-          } # end if(save.INLA ==T) 
+        } # end if(save.INLA ==T) 
         
         
         #######################  FIGURES#######################  FIGURES#######################  FIGURES#######################  FIGURES ##################
@@ -1642,11 +1642,12 @@ for(fun in funs)
             
             if(maps.to.make[m] %in% c("MW.GP-spatial","MW-spatial","CF-spatial","MC-spatial"))
             {
-                surv <- st_as_sf(CF.current[[banks[i]]],coords = c('lon','lat'),crs = 4326)
-                surv <- st_transform(surv,crs = st_crs(loc.sf)$epsg)
-                surv$`Tow type` <- paste0('detailed (n = ',nrow(surv),")")
-                p3 <- p2 + geom_sf(data=surv,aes(shape=`Tow type`),size=2) + scale_shape_manual(values = 21) + coord_sf(expand=F) +
-                  theme(legend.key = element_rect(fill=NA))
+              detailed_tows <- unique(mw[[banks[i]]][mw[[banks[i]]]$year==yr,]$tow)
+              surv <- st_as_sf(CF.current[[banks[i]]][CF.current[[banks[i]]]$tow %in% detailed_tows,],coords = c('lon','lat'),crs = 4326)
+              surv <- st_transform(surv,crs = st_crs(loc.sf)$epsg)
+              surv$`Tow type` <- paste0('detailed (n = ',nrow(surv),")")
+              p3 <- p2 + geom_sf(data=surv,aes(shape=`Tow type`),size=2) + scale_shape_manual(values = 21) + coord_sf(expand=F) +
+                theme(legend.key = element_rect(fill=NA))
             }
             
             ## NEXT UP FIGURE OUT THE SEEDBOXES!

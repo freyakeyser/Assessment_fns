@@ -1420,8 +1420,8 @@ for(fun in funs)
       # For 2024 framework banks we want ALL the tows here.
       if(!bank.4.spatial %in% c("GB", "GBa")) {
         CF.current[[bnk]]<-merge(CF.current[[bnk]],subset(surv.Live[[bnk]],year==yr,c('year','tow','lon','lat',"com","com.bm")))
-        # exclude tows that weren't actually sampled though!
-        CF.current[[bnk]] <- CF.current[[bnk]][CF.current[[bnk]]$tow %in% unique(mw.dm$tow),]
+        # # exclude tows that weren't actually sampled though!
+        # CF.current[[bnk]] <- CF.current[[bnk]][CF.current[[bnk]]$tow %in% unique(mw.dm$tow),]
       }
       # GBa we only want the 'random' tows
       if(bank.4.spatial %in% c("GB", "GBa")) CF.current[[bnk]]<-merge(CF.current[[bnk]],subset(surv.Rand[[bnk]],year==yr,c('year','tow','lon','lat',"com","com.bm")))
