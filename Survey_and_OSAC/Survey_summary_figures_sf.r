@@ -708,8 +708,8 @@ for(fun in funs)
         }
         if(banks[i] %in% c("GBa")){
           # The condition and meat count data.
-          loc.cf <- data.frame(lon = c(CF.current[["GBa"]]$lon[CF.current[["GBa"]]$year == yr],CF.current[["GBb"]]$lon[CF.current[["GBb"]]$year == yr]),
-                               lat=c(CF.current[["GBa"]]$lat[CF.current[["GBa"]]$year == yr],CF.current[["GBb"]]$lat[CF.current[["GBb"]]$year == yr]))
+          loc.cf <- unique(data.frame(lon = c(cf.data[["GBa"]]$pred.dat$lon[cf.data[["GBa"]]$pred.dat$year==yr],cf.data[["GBa"]]$pred.dat$lon[cf.data[["GBa"]]$pred.dat$year==yr]),
+                               lat = c(cf.data[["GBa"]]$pred.dat$lat[cf.data[["GBa"]]$pred.dat$year==yr],cf.data[["GBa"]]$pred.dat$lat[cf.data[["GBa"]]$pred.dat$year==yr])))
           # For the growth potential related figures we also need to make a special mesh as there could be some tows with 0 individuals
           # and these may screw up the INLA'ing
           loc.gp <- data.frame(lon = c(pot.grow[["GBa"]]$lon[pot.grow[["GBa"]]$year == yr],pot.grow[["GBb"]]$lon[pot.grow[["GBb"]]$year == yr]),
@@ -891,7 +891,7 @@ for(fun in funs)
             {
               tmp.dat <- dplyr::full_join(surv.Live[["GBa"]][surv.Live[["GBa"]]$year == yr,],surv.Live[["GBb"]][surv.Live[["GBb"]]$year == yr,])
               tmp.clap <- dplyr::full_join(surv.Clap[["GBa"]][surv.Clap[["GBa"]]$year == yr,],surv.Clap[["GBb"]][surv.Clap[["GBb"]]$year == yr,])
-              tmp.cf <- dplyr::full_join(CF.current[["GBa"]][CF.current[["GBa"]]$year == yr,], CF.current[["GBb"]][CF.current[["GBb"]]$year == yr,])
+              tmp.cf <- dplyr::full_join(cf.data[["GBa"]]$pred.dat[cf.data[["GBa"]]$pred.dat$year==yr & cf.data[["GBa"]]$pred.dat$state=="live",],cf.data[["GBb"]]$pred.dat[cf.data[["GBb"]]$pred.dat$year==yr & cf.data[["GBb"]]$pred.dat$state=="live",])
               tmp.gp <- dplyr::full_join(pot.grow[["GBa"]][pot.grow[["GBa"]]$year == yr,], pot.grow[["GBb"]][pot.grow[["GBb"]]$year == yr,])
               tmp.cf <- dplyr::left_join(tmp.dat[,c("tow", "lon", "lat")], tmp.cf)
               tmp.gp <- dplyr::left_join(tmp.dat[,c("tow", "lon", "lat")], tmp.gp)
@@ -1578,25 +1578,46 @@ for(fun in funs)
             #   load(paste0(direct,"Data/Survey_data/",yr,"/Survey_summary_output/",banks[i],"/",maps.to.make[m],".Rdata"))
             # }
             #
-            
+            browser()
             # Here we add our layer to the object above.  This is going to become a list so we can save it and modify it outside Figures.
             if(!is.null(mod.res[[maps.to.make[m]]])){
-              p2 <- pecjector(gg.obj = p, 
-                              area = banks[i],
-                              legend=T,
-                              plot=F,
-                              repo = direct_fns, 
-                              c_sys = st_crs(loc.sf)$epsg,
-                              add_inla= list(field = mod.res[[maps.to.make[m]]],
-                                             mesh = mesh,
-                                             dims=s.res,
-                                             clip = bound.poly.surv.sf,
-                                             scale = list(scale = "discrete",
-                                                          breaks = base.lvls,
-                                                          palette = cols,
-                                                          #leg.name=leg.title,
-                                                          alpha=0.75))) +
-                geom_sf(data=bound.poly.surv.sf, colour="black", fill=NA) + coord_sf(expand=F)
+              if(banks[i] %in% c("GBa", "GBb")) {
+                p2 <- pecjector(gg.obj = p, 
+                                area = banks[i],
+                                legend=T,
+                                plot=F,
+                                repo = direct_fns, 
+                                c_sys = st_crs(loc.sf)$epsg,
+                                add_inla= list(field = mod.res[[maps.to.make[m]]],
+                                               mesh = mesh,
+                                               dims=s.res,
+                                               clip = bound.poly.surv.sf,
+                                               scale = list(scale = "discrete",
+                                                            breaks = base.lvls,
+                                                            palette = cols,
+                                                            lims = c(floor(min(mod.res[[maps.to.make[m]]]$est)), ceiling(max(mod.res[[maps.to.make[m]]]$est))),
+                                                            #leg.name=leg.title,
+                                                            alpha=0.75))) +
+                  geom_sf(data=bound.poly.surv.sf, colour="black", fill=NA) + coord_sf(expand=F)
+              }
+              if(!banks[i] %in% c("GBa", "GBb")) {
+                p2 <- pecjector(gg.obj = p, 
+                                area = banks[i],
+                                legend=T,
+                                plot=F,
+                                repo = direct_fns, 
+                                c_sys = st_crs(loc.sf)$epsg,
+                                add_inla= list(field = mod.res[[maps.to.make[m]]],
+                                               mesh = mesh,
+                                               dims=s.res,
+                                               clip = bound.poly.surv.sf,
+                                               scale = list(scale = "discrete",
+                                                            breaks = base.lvls,
+                                                            palette = cols,
+                                                            #leg.name=leg.title,
+                                                            alpha=0.75))) +
+                  geom_sf(data=bound.poly.surv.sf, colour="black", fill=NA) + coord_sf(expand=F)
+              }
             }
             if(is.null(mod.res[[maps.to.make[m]]])){
               p2 <- pecjector(gg.obj = p, 

@@ -1097,7 +1097,7 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
      
     if(!is.null(add_inla$scale$alpha))   {alph <- add_inla$scale$alpha}                   else alph <- 1
     if(!is.null(add_inla$scale$palette)) {col <- addalpha(add_inla$scale$palette,alph)}   else col <- addalpha(pals::viridis(100),alph)
-    if(!is.null(add_inla$scale$limits))  {lims <- add_inla$scale$limits}                  else lims <- c(min(spd$layer,na.rm=T),max(spd$layer,na.rm=T))
+    if(!is.null(add_inla$scale$lims))  {lims <- add_inla$scale$lims}                  else lims <- c(min(spd$layer,na.rm=T),max(spd$layer,na.rm=T))
     if(!is.null(add_inla$scale$breaks))  {brk <- add_inla$scale$breaks}                   else brk <- pretty(spd$layer,n=100)
     if(!is.null(add_inla$scale$leg.name))  {leg <- add_inla$scale$leg.name}               else leg <- "Legend"
     # And now make the colour object needed. 
@@ -1117,8 +1117,14 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
       # Cut it up into the bins you want and force it to spit out numbers not scientific notation for <= 10 digits.
       spd <- spd %>% mutate(brk = cut(layer, breaks = brk,dig.lab=10))
       n.breaks <- length(unique(spd$brk))
+      if(!is.null(add_inla$scale$lims)) {
+        #browser()
+        tmp <- seq(floor(lims[1]/5)*5, ceiling(lims[2]/5)*5, 10)
+        tmp.brk <- levels(cut(tmp, breaks=brk, dig.lab=10))
+        n.breaks <- length(tmp.brk)
+        if(plot_as != "plotly") sfd <- scale_fill_manual(breaks = tmp.brk, values = col[1:n.breaks],name=leg)
+      } else if(plot_as != "plotly") sfd <- scale_fill_manual(values = col[1:n.breaks],name=leg)
       #scd <- scale_colour_manual(values = col[1:n.breaks])
-      if(plot_as != "plotly") sfd <- scale_fill_manual(values = col[1:n.breaks],name=leg)
       if(plot_as == "plotly") 
       {
         combo <- data.frame(brk = levels(spd$brk),col = col)
