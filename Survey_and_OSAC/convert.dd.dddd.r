@@ -106,8 +106,7 @@ convert.dd.dddd<-function(x,format='dec.deg')
 ### section was (at least originally) to get "nice" coordinates for Mapping functions.
   if(format=='deg.min.sec')
     {
-    browser()  
-    dat<-x
+      dat<-x
       # If data is not negative we will skip various sections of this.
       neg <- F
       # If data is negative make it a positive but also make a note 

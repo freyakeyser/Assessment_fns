@@ -125,6 +125,7 @@ OSAC_summary <- function(yr = as.numeric(format(Sys.time(), "%Y")), mx.dt = as.D
     bnk <- bank # Reset the bank and year info
     years <- years.t
     yr <- max(years)
+    
     # So we update the fishery data with the lastest for this analysis in case the above is out of date.
     # This queries the offshore so gets the most up to date fishery information which we should be sure we are using!
     logs_and_fish(loc="offshore",year = 1981:yr,un=un,pw=pwd,db.con=db.con,direct=direct, direct_fns=direct_fns, get.marfis=F)
@@ -157,7 +158,7 @@ OSAC_summary <- function(yr = as.numeric(format(Sys.time(), "%Y")), mx.dt = as.D
     ########  IF there was no fishing in the current year the output for that bank is garbage in here
     res <- NULL
     mid <- NULL
-    
+
     for(i in 1:length(bnk))
     {
       print(paste0("fishery catch table - ", bnk[i]))
@@ -325,14 +326,13 @@ OSAC_summary <- function(yr = as.numeric(format(Sys.time(), "%Y")), mx.dt = as.D
         if(bnk[i] == "Mid")  surv.res$sh <- NA ; surv.res$mc <- NA
       } # end if(length(survey.obj[[bnk[i]]][[1]]$l.bar) > 0)
       
-      browser()
       # Looks good.  I'd have the y axis go to 0. I don't love the point for the stock status value (but I do like that it is clear that in 2025 this is the value, whereas the lines I used made it muddy to know what year it was). Maybe just a totally different color for the point (like blue) would make it pop more and make me happy.
       
       # for banks with new survey-index reference points, we need to plot the index for OSAC
       # follow the  methods from 2025 Reference Point framework
-      if(bnk %in% c("BBs", "Ger", "Sab", "GBb")){
+      if(bnk[i] %in% c("BBs", "Ger", "Sab", "GBb")){
         q.index <- 0.33
-        if(bnk == "Sab"){
+        if(bnk[i] == "Sab"){
           # # Get the median, maximum, and maximum 3 year rolling mean, then get the LRP and USR from those
           # # SFA 25A
           # surv.25a <- survey.obj$Sab$model.dat
@@ -377,7 +377,7 @@ OSAC_summary <- function(yr = as.numeric(format(Sys.time(), "%Y")), mx.dt = as.D
         }
         
         # SFA 26A
-        if(bnk == "BBn"){
+        if(bnk[i] == "BBn"){
           # surv.26a <- survey.obj$BBn$model.dat
           # surv.26a <- rbind(surv.26a,c(2020,rep(NA,ncol(surv.26a)-1)))
           # surv.26a <- surv.26a |> collapse::fsubset(year >=1994)
@@ -410,7 +410,7 @@ OSAC_summary <- function(yr = as.numeric(format(Sys.time(), "%Y")), mx.dt = as.D
           #   xlab("Year")
         }
         
-        if(bnk == "Ger"){
+        if(bnk[i] == "Ger"){
           ger.shape <- github_spatial_import(subfolder="other_boundaries", zipname="other_boundaries.zip", specific_shp = "WGS_84_German.shp")
           ger.shape <-  ger.shape %>% st_make_valid() %>% st_transform(32619)
           ger.area.km2 <- st_area(ger.shape)/1e6
@@ -464,7 +464,7 @@ OSAC_summary <- function(yr = as.numeric(format(Sys.time(), "%Y")), mx.dt = as.D
           
         }
         
-        if(bnk == "GBb"){
+        if(bnk[i] == "GBb"){
           # SFA 27B
           surv.27b <- survey.obj$GBb$model.dat # Need to add missing 2020 survey in here.
           surv.27b <- rbind(surv.27b,c(2020,rep(NA,ncol(surv.27b)-1)))

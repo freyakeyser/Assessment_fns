@@ -30,6 +30,7 @@ Survey_Summary_Word <- function(year=2017, reportseason="spring", subarea=F, dat
   possiblebanks <- data.frame(banks=c("BBn", "BBs", "Ger", "Mid", "Sab", "GB", "Ban", "BanIce", "GBa", "GBb"),
                                 season=c(rep("spring", 8), rep("summer", 2)))
   bankcheck <- data.frame(banks, year=year)
+  
   bankcheck <- plyr::join(bankcheck, possiblebanks, type="full")
   bankcheck$word[bankcheck$banks=="BBn"] <- "Browns Bank North"
   bankcheck$word[bankcheck$banks=="BBs"] <- "Browns Bank South"
@@ -383,11 +384,11 @@ Survey_Summary_Word <- function(year=2017, reportseason="spring", subarea=F, dat
       shf.ty$bin <- seq(0,195,5)
       shf.ty$size <- cut(shf.ty$bin, c(0,size$RS, size$CS, 200), include.lowest = T, right = F)
       sizeclass <- data.frame(size=unique(shf.ty$size), class=c("PR", "Rec", "FR"))
-      shf.ty <- join(shf.ty, sizeclass, type="full")
+      shf.ty <- plyr::join(shf.ty, sizeclass, type="full")
       names(shf.ty) <- c("npertow", "bin", "size", "class")
       expanded <- shf.ty[rep(seq_len(nrow(shf.ty)), shf.ty$npertow), 1:2]
       #hist(expanded$bin)
-      expanded <- join(expanded, shf.ty[, c("bin", "class")])
+      expanded <- plyr::join(expanded, shf.ty[, c("bin", "class")])
       sevfiveperc <- c(quantile(x=expanded$bin, c(0.125, 0.5, 0.875, 1))[1], quantile(x=expanded$bin, c(0.125, 0.5, 0.875, 1))[3])
       sizerange75[paste0(y)] <- paste0(round_any(sevfiveperc[1], 5), "-", round_any(sevfiveperc[2], 5))
       sevfivepercPR <- c(quantile(x=expanded$bin[expanded$class %in% c("PR")], c(0.125, 0.5, 0.875, 1))[1], quantile(x=expanded$bin[expanded$class %in% c("PR")], c(0.125, 0.5, 0.875, 1))[3])
@@ -451,7 +452,6 @@ if(banks[i] == "GB") mcreg <- fish.reg$MC_reg[fish.reg$Bank=="GBa" & fish.reg$ye
     highlights <- rbind(highlights, towsummary)
 
     # mwsh and cf
-
     if(banks[i] %in% c("GBa", "GB")) fittedmw100mm <- 1^SpatHtWt.fit[banks[i]][[1]]$B * SpatHtWt.fit[banks[i]][[1]]$A
     if(!banks[i] %in% c("GBa", "GB")) {
       slope <- cf.data[[banks[i]]]$CF.fit$mw.sh.coef %>% dplyr::filter(year == yr) %>% dplyr::pull(fix.slope); slope <- slope[1]
@@ -750,11 +750,11 @@ spatial.sum.stats$cf <- rbind(spatial.sum.stats$cf, spatial.sum.stats.c)
                shf.ty$bin <- seq(0,195,5)
                shf.ty$size <- cut(shf.ty$bin, c(0,size$RS, size$CS, 200), include.lowest = T, right = F)
                sizeclass <- data.frame(size=unique(shf.ty$size), class=c("PR", "Rec", "FR"))
-               shf.ty <- join(shf.ty, sizeclass, type="full")
+               shf.ty <- plyr::join(shf.ty, sizeclass, type="full")
                names(shf.ty) <- c("npertow", "bin", "size", "class")
                expanded <- shf.ty[rep(seq_len(nrow(shf.ty)), shf.ty$npertow), 1:2]
                #hist(expanded$bin)
-               expanded <- join(expanded, shf.ty[, c("bin", "class")])
+               expanded <- plyr::join(expanded, shf.ty[, c("bin", "class")])
 
                sevfiveperc <- c(quantile(x=expanded$bin, c(0.125, 0.5, 0.875, 1))[1], quantile(x=expanded$bin, c(0.125, 0.5, 0.875, 1))[3])
                sizerange75_seed_y[paste0(y)] <- paste0(round_any(sevfiveperc[1], 5), "-", round_any(sevfiveperc[2], 5))
@@ -768,12 +768,12 @@ spatial.sum.stats$cf <- rbind(spatial.sum.stats$cf, spatial.sum.stats.c)
                shf.bm.ty$bin <- seq(0,195,5)
                shf.bm.ty$size <- cut(shf.bm.ty$bin, c(0,size$RS, size$CS, 200), include.lowest = T, right = F)
                sizeclass <- data.frame(size=unique(shf.bm.ty$size), class=c("PR", "Rec", "FR"))
-               shf.bm.ty <- join(shf.bm.ty, sizeclass, type="full")
+               shf.bm.ty <- plyr::join(shf.bm.ty, sizeclass, type="full")
                names(shf.bm.ty) <- c("npertow", "bin", "size", "class")
                shf.bm.ty <- shf.bm.ty[shf.bm.ty$bin > 60,]
                shf.bm.ty$npertow[is.na(shf.bm.ty$npertow)] <- 0
                expanded <- shf.bm.ty[rep(seq_len(nrow(shf.bm.ty)), shf.bm.ty$npertow), 1:2]
-               expanded <- join(expanded, shf.bm.ty[, c("bin", "class")])
+               expanded <- plyr::join(expanded, shf.bm.ty[, c("bin", "class")])
                #hist(expanded$bin)
                sevfiveperc <- c(quantile(x=expanded$bin, c(0.125, 0.5, 0.875, 1))[1], quantile(x=expanded$bin, c(0.125, 0.5, 0.875, 1))[3])
                sizerange75_seed_bm_y[paste0(y)] <- paste0(round_any(sevfiveperc[1], 5), "-", round_any(sevfiveperc[2], 5))

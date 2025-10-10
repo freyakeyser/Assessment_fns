@@ -3,8 +3,8 @@ library(rmarkdown)
 require(ggplot2)
 
 ######## prep input data if you haven't already
-year <- 2024
-reportyear <- 2024
+year <- 2025
+reportyear <- 2025
 #direct_fns <- "C:/Documents/Assessment_fns/"
 
 #################################################
@@ -27,7 +27,7 @@ save(summary_data, file = "summary4.Rdata")
 
 ######################################################
 #### build the book!
-# Modify render_markdowns.R based on the banks/survey you desire. Also make sure the Rdata file in parameterised_report.Rmd is right.
+# Modify render_markdowns_word.R and index.Rmd based on the banks/survey you desire. Also make sure the Rdata file in parameterised_report.Rmd is right.
 source("officedown/render_markdowns_word.R")
 ########################################################
 

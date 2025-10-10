@@ -357,7 +357,7 @@ for(fun in funs)
   		# Look at jackkniffe function along with Smith(1980) to understand what 'se' v.s. 'sd' options really mean
   		cpue.dat<-jackknife(jack.dat)[,-(3:4)]
 	  } # end if(method=='jackknife')
-
+	
 	# Put the calculated data with the Catch/effort data.
 	total<-merge(data.frame(year=min(catch.dat$year,na.rm=T):max(catch.dat$year,na.rm=T)),merge(catch.dat,cpue.dat,all=T),all=T)
 
@@ -434,7 +434,7 @@ for(fun in funs)
     	                                                       "-",max(total$year,na.rm=T),"_",bk,".txt",sep=""),
     	                                                        sep="\t", row.names = F, col.names = T)
   	    }# end  if(period = "survyr")
-	 
+	  
 	  }
 	# if this is = T we tweak the out object to have these headers/data.  Perhaps if sending data to our model or based on model output??
 	if(model.out == T) out<-data.frame(year=c(min(total$year,na.rm=T):max(total$year,na.rm=T)),

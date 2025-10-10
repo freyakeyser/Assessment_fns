@@ -316,14 +316,15 @@ for(fun in funs)
           
           log1 <- do.call("rbind",log.lst)
           slip1 <- do.call("rbind",slip.lst)
-
+ 
           # This removes columns/variables we do not need.
           slip <- with(slip1, data.frame(mdid = MON_DOC_ID, ves = VESSEL_NAME, vrnum = VR_NUMBER, tripnum = TRIP_ID, 
                                          sail = as.Date(DATE_SAILED,format="%d-%b-%y"), 
                                          land = as.Date(LANDING_DATE_TIME,format="%d-%b-%y"), 
                                          gear.ft = GEAR_SIZE_FEET, numshuck = NUM_OF_CREW_SHUCKING, numcrew = NUM_OF_CREW, 
                                          weight = SLIP_WEIGHT_LBS, grade = FISH_GRADE,stringsAsFactors = F,
-                                         licence = LICENCE_ID))
+                                         licence = LICENCE_ID,
+                                         company=EA_COMPANY))
           
           # This removes columns/variables we do not need.
           log <- with(log1, data.frame(mdid = MON_DOC_ID, ves = VESSEL_NAME,vrnum = VR_NUMBER, tripnum = TRIP_ID, 

@@ -11,8 +11,9 @@ require(patchwork)
 require(tidyverse)
 
 direct <- "Y:/Offshore/Assessment/"
+#direct <- "C:/Users/keyserf/Documents/temp_data/"
 direct_fns <- "C:/Users/keyserf/Documents/Github/Assessment_fns/"
-year <- 2022
+year <- 2025
 
 source(paste0(direct_fns, "Fishery/logs_and_fishery_data.r"))
 logs_and_fish(loc="offshore",year = 2010:year, direct="Y:/Offshore/Assessment/")
@@ -21,7 +22,7 @@ new.log.dat$month <- month(new.log.dat$fished)
 new.log.dat$date <- ymd(new.log.dat$date)
 
 months <- 1:12
-banks <- c("SPB")
+banks <- c("GBa")
 ```
 
 

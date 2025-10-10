@@ -609,7 +609,7 @@ for(fun in funs)
       subarea_cv <- do.call(rbind,lapply(lapply(survey.obj[c("GBa-North", "GBa-West", "GBa-East", "GBa-Central", "GBa-South")], function(x) x[[1]]),data.frame))
       subarea_df$subarea <- gsub(x=row.names(subarea_df),pattern = "\\..*",replacement="")
       subarea_cv$subarea <- gsub(x=row.names(subarea_cv),pattern = "\\..*",replacement="")
-      subarea_df <- join(subarea_df, subarea_cv[, c("year", "subarea", "N.cv", "NPR.cv", "NR.cv", "I.cv", 'IR.cv', "IPR.cv", "CF")], type="full")
+      subarea_df <- plyr::join(subarea_df, subarea_cv[, c("year", "subarea", "N.cv", "NPR.cv", "NR.cv", "I.cv", 'IR.cv', "IPR.cv", "CF")], type="full")
       
     }
     
@@ -619,7 +619,7 @@ for(fun in funs)
       ts_cv <- do.call(rbind,lapply(lapply(survey.obj[names(survey.obj)[which(names(survey.obj) %in% banklist)]], function(x) x[[1]]),data.frame))
       ts_df$subarea <- gsub(x=row.names(subarea_df),pattern = "\\..*",replacement="")
       ts_cv$subarea <- gsub(x=row.names(subarea_cv),pattern = "\\..*",replacement="")
-      ts_df <- join(ts_df, ts_cv[, c("year", "subarea", "N.cv", "NPR.cv", "NR.cv", "I.cv", 'IR.cv', "IPR.cv", "CF")], type="full")
+      ts_df <- plyr::join(ts_df, ts_cv[, c("year", "subarea", "N.cv", "NPR.cv", "NR.cv", "I.cv", 'IR.cv', "IPR.cv", "CF")], type="full")
     }
     
     ################################# START MAKING FIGURES################################# START MAKING FIGURES################################# 
@@ -890,10 +890,9 @@ for(fun in funs)
             if(banks[i] %in% c("GBb", "GBa")) 
             {
               tmp.dat <- dplyr::full_join(surv.Live[["GBa"]][surv.Live[["GBa"]]$year == yr,],surv.Live[["GBb"]][surv.Live[["GBb"]]$year == yr,])
+              tmp.cf <- tmp.dat
               tmp.clap <- dplyr::full_join(surv.Clap[["GBa"]][surv.Clap[["GBa"]]$year == yr,],surv.Clap[["GBb"]][surv.Clap[["GBb"]]$year == yr,])
-              tmp.cf <- dplyr::full_join(cf.data[["GBa"]]$pred.dat[cf.data[["GBa"]]$pred.dat$year==yr & cf.data[["GBa"]]$pred.dat$state=="live",],cf.data[["GBb"]]$pred.dat[cf.data[["GBb"]]$pred.dat$year==yr & cf.data[["GBb"]]$pred.dat$state=="live",])
               tmp.gp <- dplyr::full_join(pot.grow[["GBa"]][pot.grow[["GBa"]]$year == yr,], pot.grow[["GBb"]][pot.grow[["GBb"]]$year == yr,])
-              tmp.cf <- dplyr::left_join(tmp.dat[,c("tow", "lon", "lat")], tmp.cf)
               tmp.gp <- dplyr::left_join(tmp.dat[,c("tow", "lon", "lat")], tmp.gp)
             }  # end if(banks[i] %in% c("GBb","GBa")) 
             
@@ -908,7 +907,7 @@ for(fun in funs)
             tmp.dat <- add_utm_columns(tmp.dat, c("lon", "lat"), utm_crs=st_crs(loc.sf))
             tmp.cf <- add_utm_columns(tmp.cf, c("lon", "lat"), utm_crs=st_crs(loc.sf))
             tmp.clap <- add_utm_columns(tmp.clap, c("lon", "lat"), utm_crs=st_crs(loc.sf))
-            tmp.gp <- left_join(tmp.dat[,c("tow", "X","Y")], tmp.gp)
+            tmp.gp <- dplyr::left_join(tmp.dat[,c("tow", "X","Y")], tmp.gp)
             
             if(banks[i] %in% c("Mid", "GB")) {
               tmp.cf <- tmp.dat
@@ -1578,7 +1577,7 @@ for(fun in funs)
             #   load(paste0(direct,"Data/Survey_data/",yr,"/Survey_summary_output/",banks[i],"/",maps.to.make[m],".Rdata"))
             # }
             #
-            browser()
+            #browser()
             # Here we add our layer to the object above.  This is going to become a list so we can save it and modify it outside Figures.
             if(!is.null(mod.res[[maps.to.make[m]]])){
               if(banks[i] %in% c("GBa", "GBb")) {
@@ -2196,7 +2195,7 @@ for(fun in funs)
         subarea_abund_cv <- melt(subarea_df[subarea_df$year==yr, c("subarea", "N.cv", "NPR.cv", "NR.cv")], id.vars="subarea", variable.name = "CV")
         subarea_abund_cv$variable <- gsub(x=subarea_abund_cv$CV, ".cv", "")
         subarea_abund_cv$CV <- subarea_abund_cv$value
-        subarea_abund <- join(subarea_abund, subarea_abund_cv[,c("subarea","variable", "CV")], type="full")
+        subarea_abund <- plyr::join(subarea_abund, subarea_abund_cv[,c("subarea","variable", "CV")], type="full")
         subarea_abund$variable <- factor(subarea_abund$variable, levels=c("NPR", "NR", "N"))
         levels(subarea_abund$variable) <- c("Pre-recruits", "Recruits", "Fully-recruited")
         subarea_abund$subarea <- factor(subarea_abund$subarea, levels = c("GBa-North", "GBa-South", "GBa-West", "GBa-Central", "GBa-East"))
@@ -2315,7 +2314,7 @@ for(fun in funs)
         subarea_biomass_cv <- melt(subarea_df[subarea_df$year==yr, c("subarea", "I.cv", "IPR.cv", "IR.cv")], id.vars="subarea", variable.name = "CV")
         subarea_biomass_cv$variable <- gsub(x=subarea_biomass_cv$CV, ".cv", "")
         subarea_biomass_cv$CV <- subarea_biomass_cv$value
-        subarea_biomass <- join(subarea_biomass, subarea_biomass_cv[,c("subarea","variable", "CV")], type="full")
+        subarea_biomass <- plyr::join(subarea_biomass, subarea_biomass_cv[,c("subarea","variable", "CV")], type="full")
         subarea_biomass$variable <- factor(subarea_biomass$variable, levels=c("IPR", "IR", "I"))
         levels(subarea_biomass$variable) <- c("Pre-recruits", "Recruits", "Fully-recruited")
         subarea_biomass$subarea <- factor(subarea_biomass$subarea, levels = c("GBa-North", "GBa-South", "GBa-West", "GBa-Central", "GBa-East"))
@@ -2787,7 +2786,7 @@ for(fun in funs)
       subarea_abund_cv <- melt(subarea_df[subarea_df$year==yr, c("subarea", "N.cv", "NPR.cv", "NR.cv")], id.vars="subarea", variable.name = "CV")
       subarea_abund_cv$variable <- gsub(x=subarea_abund_cv$CV, ".cv", "")
       subarea_abund_cv$CV <- subarea_abund_cv$value
-      subarea_abund <- join(subarea_abund, subarea_abund_cv[,c("subarea","variable", "CV")], type="full")
+      subarea_abund <- plyr::join(subarea_abund, subarea_abund_cv[,c("subarea","variable", "CV")], type="full")
       subarea_abund$variable <- factor(subarea_abund$variable, levels=c("NPR", "NR", "N"))
       levels(subarea_abund$variable) <- c("Pre-recruits", "Recruits", "Fully-recruited")
       subarea_abund$subarea <- factor(subarea_abund$subarea, levels = c("GBa-North", "GBa-South", "GBa-West", "GBa-Central", "GBa-East"))
