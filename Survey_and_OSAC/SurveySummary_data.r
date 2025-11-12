@@ -761,9 +761,11 @@ for(fun in funs)
       # From 1996-current CS= 95, RS = 85
       # This is the Shell height for each shell height category. If it ever changes in the future this will need adjusted.
       # If we are still using this code in 2030 I'll be both old and worried...
+      #browser()
       if(grepl("GB",bnk))
       {
         SH.dat <- data.frame(year = 1980:2030,CS = c(rep(75,6),rep(85,10),rep(95,2030-1995)),RS = c(rep(60,6),rep(75,10),rep(85,2030-1995)))
+        #SH.dat <- expand.grid(year = 1980:2030,CS = 95,RS = 85)
         CS <- SH.dat$CS[SH.dat$year %in% years]
         RS <- SH.dat$RS[SH.dat$year %in% years]
       } # End if(bnk == "GBa")

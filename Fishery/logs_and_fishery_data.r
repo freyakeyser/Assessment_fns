@@ -612,7 +612,7 @@ for(fun in funs)
               slip.lst[[i]] <- ScallopQuery(package=db.lib, un=un, pw=pw, db.con=db.con, SQLtext= qu.slip)
               
               #odbcCloseAll()  # close the database connection.
-              
+
               # Send each year to a flat file in the Raw_MARFIS folder
               # if we are extracting data from the current year include the date so we know how current the data are.
               if(ex.marfis ==T)
@@ -632,12 +632,14 @@ for(fun in funs)
                 if(yr[i] == current.year)
                   {
                     #Write3
-                    write.table(log.lst[[i]], file = paste(direct.off,"Data/Fishery_data/Logs/MARFIS//MARFIS_log_up_to",
-                                                           max(log.lst[[i]]$DATE_FISHED,na.rm=T), ".csv",sep=""),
+                  lab <- gsub(x = max(log.lst[[i]]$DATE_FISHED,na.rm=T), pattern=":", replacement="", fixed=T)
+                  write.table(log.lst[[i]], file = paste(direct.off,"Data/Fishery_data/Logs/MARFIS/MARFIS_log_up_to",
+                                                           lab, ".csv",sep=""),
                                                            sep=",",row.names=F,col.names=T)
                     #Write4
+                  lab <- gsub(x = max(slip.lst[[i]]$DATE_FISHED,na.rm=T), pattern=":", replacement="", fixed=T)
                     write.table(slip.lst[[i]], file = paste(direct.off,"Data/Fishery_data/Slips/MARFIS/MARIFS_slip_up_to",
-                                                            max(slip.lst[[i]]$DATE_SAILED,na.rm=T),".csv",sep=""),
+                                                           lab,".csv",sep=""),
                                                             sep=",", row.names=F,col.names=T)
                   } # END if(yr[i] != current.year)   
                 } # end if(ex.marfis==T)

@@ -206,6 +206,9 @@ spatial.stats.detail <- rbind(spatial.stats.detail, mc)
 **Pre-recruit, recruit, and fully-recruited abundance:**
 
 The spatial distributions of pre-recruit, recruit, and fully-recruited scallop are shown in the upcoming maps. The colours are based on a geostatistical model that uses a Gaussian Markov Random Field (GMRF) to predict the spatial distribution.  
+
+Starting in the spring of 2025, the geostatistical models were generated using the *sdmTMB* package in R. Previously, the *inla* package was used. 
+
 _These models may not represent the full range of values observed during the survey._
 
 ```{r, echo=F, tab.cap="Summary statistics for tow abundance by size class, for the current survey."}

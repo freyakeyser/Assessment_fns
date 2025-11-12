@@ -59,7 +59,7 @@ OSAC_summary <- function(yr = as.numeric(format(Sys.time(), "%Y")), mx.dt = as.D
                          mc.path = "default",direct, direct_fns,
                          un=NULL,pw=NULL,db.con="ptran")
 {
-  
+  options(timeout=120)
   # Load functions and external datafiles we might need
   if(missing(direct_fns))
   {
@@ -99,7 +99,7 @@ OSAC_summary <- function(yr = as.numeric(format(Sys.time(), "%Y")), mx.dt = as.D
   require(collapse) || stop("Please install collapse.")
   require(zoo) || stop("Please install zoo.")
   require(ggplot2) || stop("Please install ggplot2")
-  
+
   # If you set bank to be NULL we skip almost the entire function and just run the meat count bit, if you set to NULL and don't calc.mc then
   # a big nothing happens!
   if(!is.null(bank))
@@ -125,7 +125,7 @@ OSAC_summary <- function(yr = as.numeric(format(Sys.time(), "%Y")), mx.dt = as.D
     bnk <- bank # Reset the bank and year info
     years <- years.t
     yr <- max(years)
-    
+browser()
     # So we update the fishery data with the lastest for this analysis in case the above is out of date.
     # This queries the offshore so gets the most up to date fishery information which we should be sure we are using!
     logs_and_fish(loc="offshore",year = 1981:yr,un=un,pw=pwd,db.con=db.con,direct=direct, direct_fns=direct_fns, get.marfis=F)
@@ -241,7 +241,7 @@ OSAC_summary <- function(yr = as.numeric(format(Sys.time(), "%Y")), mx.dt = as.D
     # First we can generate interesting fishery related stats for each bank in the most recently fished year.
     #bnk=c("GBa")
     #bnk <- as.character(unique(fish.regs$Bank))
-    
+
     ### DK NOTE OCT 2017.   When I have a minute I can remove the call to fishery.dat from the below loop and make this function more efficient 
     #as I already have these data and from the fishery figures function.  Only problem is I don't have number of trips correct in that function 
     #  (is provides number of watches I think) for the cpue ts info, I'll need to encorporate something like the below line which gets that info...
@@ -412,6 +412,7 @@ OSAC_summary <- function(yr = as.numeric(format(Sys.time(), "%Y")), mx.dt = as.D
         
         if(bnk[i] == "Ger"){
           ger.shape <- github_spatial_import(subfolder="other_boundaries", zipname="other_boundaries.zip", specific_shp = "WGS_84_German.shp")
+          #ger.shape <- st_read("C:/Users/keyserf/Documents/Github/GIS_layers/other_boundaries/WGS_84_German.shp")
           ger.shape <-  ger.shape %>% st_make_valid() %>% st_transform(32619)
           ger.area.km2 <- st_area(ger.shape)/1e6
           # I should be using the "merged.survey.obj here....
@@ -445,19 +446,26 @@ OSAC_summary <- function(yr = as.numeric(format(Sys.time(), "%Y")), mx.dt = as.D
           # Now german
           plt.dat.26c <- data.frame(year=max(surv.26c$year), cur.bm = bm.last.3.26c,
                                     lrp = LRP.26c, usr = USR.26c)
-          
-          plt.26c.bmi.ts <- ggplot() + geom_line(data=surv.26c, aes(x=year,y=I)) +
-            geom_errorbar(data=surv.26c, aes(x=year,ymin=I-(I*I.cv),ymax=I+(I*I.cv)), width = 0) +
-            geom_point(data= plt.dat.26c,aes(x=year,y=cur.bm), colour="#67a9cf", shape=16, size=2) +
-            geom_hline(yintercept = plt.dat.26c$lrp,color="#ef8a62",linetype = 'dashed') +
+          browser()
+          plt.26c.bmi.ts <- 
+            ggplot() + 
+            geom_ribbon(data=surv.26c, aes(x=year,ymin=I-(I*I.cv),ymax=I+(I*I.cv)), fill="grey") +
+            geom_line(data=surv.26c, aes(x=year,y=I)) +
+            geom_point(data= surv.26c,aes(x=year,y=I), colour="black", shape=16, size=1) +
+            geom_point(data= plt.dat.26c,aes(x=year,y=cur.bm, colour="\n3-year\ngeometric\nmean\n"), shape=15, size=2) +
+            scale_color_manual(values = c("\n3-year\ngeometric\nmean\n" = "blue"))+
+            #geom_text(data= plt.dat.26c,aes(x=year,y=cur.bm, label="3y mean"), colour="blue", hjust=-0.1, vjust=0.5) +
+            geom_hline(yintercept = plt.dat.26c$lrp,color="red",linetype = 'dashed') +
+            geom_text(data=surv.26c, aes(x=min(year), y=plt.dat.26c$lrp, label="LRP"),color="red",hjust=0, vjust=1.2) +
+            #xlim(c(min(surv.26c$year), max(surv.26c$year)+2))+
             #scale_x_continuous(name = '',breaks = seq(1995,2025,by=5),limits = c(1994,2022)) +
             ylim(c(0,NA))+
             theme_bw() +
-            theme(panel.grid=element_blank())+
-            ylab("Survey index (tonnes)") +
+            theme(panel.grid=element_blank(), legend.background = element_blank(),legend.title=element_blank())+
+            ylab("Fully-recruited survey biomass index (tonnes)") +
             xlab("Year")
           
-          png(paste(direct,yr,"/Presentations/OSAC/",bnk[i],"/survey_index_lrp.png",sep=""),units="in",width = 11, height = 8.5,
+          png(paste(direct,yr,"/Presentations/OSAC/",bnk[i],"/survey_index_lrp.png",sep=""),units="in",width = 7, height = 4,
               res=420)
           print(plt.26c.bmi.ts)
           dev.off()
@@ -487,18 +495,24 @@ OSAC_summary <- function(yr = as.numeric(format(Sys.time(), "%Y")), mx.dt = as.D
                                     lrp = LRP.27b,
                                     usr = USR.27b)
           
-          plt.27b.bmi.ts <-  ggplot() + geom_line(data=surv.27b, aes(x=year,y=I)) +
-            #geom_errorbar(data=surv.27b, aes(x=year,ymin=I-(I*I.cv),ymax=I+(I*I.cv)), width = 0) +
-            geom_point(data= plt.dat.27b,aes(x=year,y=cur.bm), colour="#67a9cf", shape=16, size=2) +
-            geom_hline(yintercept = plt.dat.27b$lrp,color="#ef8a62",linetype = 'dashed') +
+          plt.27b.bmi.ts <-  ggplot() + 
+            geom_ribbon(data=surv.27b, aes(x=year,ymin=I-(I*I.cv),ymax=I+(I*I.cv)), fill="grey") +
+            geom_line(data=surv.27b, aes(x=year,y=I)) +
+            geom_point(data= surv.27b,aes(x=year,y=I), colour="black", shape=16, size=1) +
+            geom_point(data= plt.dat.27b,aes(x=year,y=cur.bm, colour="\n3-year\ngeometric\nmean\n"), shape=15, size=2) +
+            scale_color_manual(values = c("\n3-year\ngeometric\nmean\n" = "blue"))+
+            #geom_text(data= plt.dat.27b,aes(x=year,y=cur.bm, label="3y mean"), colour="blue", hjust=-0.1, vjust=0.5) +
+            geom_hline(yintercept = plt.dat.27b$lrp,color="red",linetype = 'dashed') +
+            geom_text(data=surv.27b, aes(x=min(year), y=plt.dat.27b$lrp, label="LRP"),color="red",hjust=0, vjust=1.2) +
+            #xlim(c(min(surv.27b$year), max(surv.27b$year)+4))+
             #scale_x_continuous(name = '',breaks = seq(1995,2025,by=5),limits = c(1994,2022)) +
             ylim(c(0,NA))+
             theme_bw() +
-            theme(panel.grid=element_blank())+
-            ylab("Survey index (tonnes)") +
+            theme(panel.grid=element_blank(), legend.background = element_blank(),legend.title=element_blank())+
+            ylab("Fully-recruited survey biomass index (tonnes)") +
             xlab("Year")
     
-          png(paste(direct,yr,"/Presentations/OSAC/",bnk[i],"/survey_index_lrp.png",sep=""),units="in",width = 11, height = 8.5,
+          png(paste(direct,yr,"/Presentations/OSAC/",bnk[i],"/survey_index_lrp.png",sep=""),units="in",width = 7, height = 4,
               res=420)
           print(plt.27b.bmi.ts)
           dev.off()
