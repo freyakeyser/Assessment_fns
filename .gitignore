@@ -72,3 +72,6 @@ markdown/
 *.RData
 **/Survey_and_OSAC/bookdown_report/summary.Rdata**
 *.Rdata
+Survey_and_OSAC/bookdown_report/assess_privacy.gpkg
+Survey_and_OSAC/bookdown_report/output2.log
+Survey_and_OSAC/bookdown_report/output2.log
