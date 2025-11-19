@@ -282,7 +282,6 @@ pe.fig <- function(input = NULL, growth = "both", years, graphic="screen",plot= 
       if(graphic=="screen")  windows(wd,ht) ; plot(p)
     } # end if(any(growth %in% c("modelled")))
     
-    
     if(any(growth %in% c("realized")))
     {
       biomass.r <- NULL
@@ -322,7 +321,7 @@ pe.fig <- function(input = NULL, growth = "both", years, graphic="screen",plot= 
       mod.bm <- NULL
       for(i in 1:num.years)
       {
-        proj.bm[[names(out.realized)[i]]] <- out.realized[[i]]$proj.bm.sims[out.realized[[i]]$proj.bm.sims > quantile(out.realized[[i]]$proj.bm.sims,0.1) &
+        proj.bm[[names(out.realized)[[i]]]] <- out.realized[[i]]$proj.bm.sims[out.realized[[i]]$proj.bm.sims > quantile(out.realized[[i]]$proj.bm.sims,0.1) &
                                                                               out.realized[[i]]$proj.bm.sims < quantile(out.realized[[i]]$proj.bm.sims,0.9)]
         tmp <- out.realized[[i]]$bm.sims[,ncol(out.realized[[i]]$bm.sims)]
         mod.bm[[names(out.realized)[i]]] <- tmp[tmp > quantile(tmp,0.1) & tmp < quantile(tmp,0.9)]
