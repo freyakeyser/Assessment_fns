@@ -687,6 +687,10 @@ for(fun in funs)
         
         bound.poly.surv.sp <- pbs_2_sf(bound.poly.surv, lon="X", lat="Y")
         
+        if(banks[i]=="Ger") {
+          
+        }
+        
         # Next we get the survey locations
         if(banks[i] %in% c("Mid","Sab","Ger","BBn","BBs","Ban","BanIce","SPB","GB", "GBb"))
         {   
@@ -741,7 +745,7 @@ for(fun in funs)
           # bound.poly.surv.sp <- spTransform(bound.poly.surv.sp, CRSobj = st_crs(32619)[[2]])
           bound.poly.surv.sf <- st_transform(st_as_sf(bound.poly.surv.sp),crs = 32619)
         }
-
+        
         if(!banks[i] %in% c("GBa", "GBb")) {
           if(exists("bound.poly.surv.sf") & length(unique(surv.Live[[banks[i]]]$random[surv.Live[[banks[i]]]$year==yr]))>1) {
             out <- loc.sf %>% mutate(
@@ -796,14 +800,22 @@ for(fun in funs)
                                        max.edge = c(5, 5), # inner and outer max triangle lengths
                                        offset = c(5, 5)) # inner and outer border widths)
           }
-          
           if(banks[i] %in% c("Ger")) {
-            bound <- st_buffer(st_transform(bound.poly.surv.sf, 32619),dist = 1000)
-            st_geometry(bound) <- st_geometry(bound)/1000
+            shpf_map <- st_read(paste0(gis.repo, "/Offshore/SFA26C.shp")) %>%
+              st_transform(32619)
+            xmin_ger <- data.frame(x=rep(as.numeric(st_bbox(bound.poly.surv.sf)$xmin),2), 
+                                   y=c(as.numeric(st_bbox(shpf_map)$ymin), as.numeric(st_bbox(shpf_map)$ymax)))
+            xmin_ger <- st_as_sf(xmin_ger, coords=c("x", "y"), crs=32619) %>% group_by(1) %>% summarize(do_union=F) %>% st_cast("MULTILINESTRING")
+            shpf_map <- lwgeom::st_split(shpf_map, xmin_ger) %>% 
+              st_collection_extract("POLYGON") %>%
+              mutate(ID = 1:length(ID)) %>%
+              filter(ID==1)
+            bound.poly.surv.sf <- shpf_map
+            st_geometry(shpf_map) <- st_geometry(shpf_map)/1000
             mesh <- sdmTMB::make_mesh(data = as.data.frame(st_coordinates(loc.sf))/1000, 
                                      xy_cols = c("X", "Y"), 
                                      fmesher_func = fmesher::fm_mesh_2d_inla,
-                                     boundary = inla.sp2segment(bound),
+                                     boundary = inla.sp2segment(shpf_map),
                                      cutoff = 0.5, # minimum triangle edge length
                                      max.edge = c(5, 5), # inner and outer max triangle lengths
                                      offset = c(5, 5)) # inner and outer border widths)
@@ -1227,7 +1239,6 @@ for(fun in funs)
             for(k in 1:num.bins)
             {
               print(bin.names[k])
-              
               # In the next bunch of if statements we run the INLA model and we get the figure titles sorted out.
               # This is the stack for the INLA model
               pick <- which(names(tmp.dat) %in% c(bin.names[k], "lon", "lat"))
@@ -1237,16 +1248,30 @@ for(fun in funs)
               tmp.bin <- cbind(as.data.frame(tmp.bin), st_coordinates(tmp.bin)/1000)
               names(tmp.bin)[1] <- "out"
               
-              fitted[[bin.names[k]]] <- sdmTMB(
+              x <- tryCatch(print(eval(parse(text = 'sdmTMB(
                 out ~ 1, 
                 data = tmp.bin,
                 family = nbinom1(link="log"),
                 mesh = mesh,
-                spatial = "on")
+                spatial = "on")'))), 
+                            error = function(e) e)
               
-              sane <- sanity(fitted[[bin.names[k]]])
+              if("error" %in% class(x)) {
+                fitted[[bin.names[k]]]  <- NULL
+                mod.res[[bin.names[k]]] <- NULL
+              } 
+              if(!"error" %in% class(x)) {
+                fitted[[bin.names[k]]] <- sdmTMB(
+                  out ~ 1, 
+                  data = tmp.bin,
+                  family = nbinom1(link="log"),
+                  mesh = mesh,
+                  spatial = "on")
+                
+                sane <- sanity(fitted[[bin.names[k]]])
+              }
               
-              if(sum(unlist(sane))<7 & (sane$hessian_ok ==F | sane$eigen_values_ok==F)) {
+              if(is.null(fitted[[bin.names[k]]]) | sum(unlist(sane))<7 & (sane$hessian_ok ==F | sane$eigen_values_ok==F)) {
                 fitted[[bin.names[k]]] <- sdmTMB(
                   out ~ 1, 
                   data = tmp.bin,
@@ -1257,7 +1282,7 @@ for(fun in funs)
                 sane <- sanity( fitted[[bin.names[k]]])
                 
                 if(sum(unlist(sane))<7 & (sane$hessian_ok ==F | sane$eigen_values_ok==F)) {
-                 x <- tryCatch(print(eval(parse(text = 'sdmTMB(
+                  x <- tryCatch(print(eval(parse(text = 'sdmTMB(
                     out ~ 1, 
                     data = tmp.bin,
                     family = tweedie(link="log"),
@@ -1612,13 +1637,13 @@ for(fun in funs)
 
             if(exists("poly_to_add")){
               if(maps.to.make[m] %in% c("MW.GP-spatial","MW-spatial","CF-spatial","MC-spatial")){
-                bound.poly.surv.sf <- st_difference(bound.poly.surv.sf, poly_to_add)
+                if(!banks[i] == "Ger") bound.poly.surv.sf <- st_difference(bound.poly.surv.sf, poly_to_add)
               }
               
               if((banks[i] == "GBa" & !maps.to.make[m] %in% c("MW.GP-spatial","MW-spatial","CF-spatial","MC-spatial"))|
                  !banks[i]=="GBa"){
                 if(!st_geometry(bound.poly.surv.sf) == st_geometry(st_union(bound.poly.surv.sf, poly_to_add))){
-                  bound.poly.surv.sf <- st_union(bound.poly.surv.sf, poly_to_add)
+                  if(!banks[i] == "Ger") bound.poly.surv.sf <- st_union(bound.poly.surv.sf, poly_to_add)
                 }
               }
               rm(poly_to_add)
@@ -1801,6 +1826,18 @@ for(fun in funs)
 
       # Use the cut out I make for the INLA models, it looks o.k.
       if(banks[i] %in% c("Mid","Ger")) shpf <- st_as_sf(bound.poly.surv.sp)
+      if(banks[i] %in% c("Ger")) {
+        shpf_map <- st_read(paste0(gis.repo, "/Offshore/SFA26C.shp")) %>%
+          st_transform(32619)
+        xmin_ger <- data.frame(x=rep(as.numeric(st_bbox(shpf)$xmin),2), 
+                               y=c(as.numeric(st_bbox(shpf_map)$ymin), as.numeric(st_bbox(shpf_map)$ymax)))
+        xmin_ger <- st_as_sf(xmin_ger, coords=c("x", "y"), crs=32619) %>% group_by(1) %>% summarize(do_union=F) %>% st_cast("MULTILINESTRING")
+        shpf_map <- lwgeom::st_split(shpf_map, xmin_ger) %>% 
+          st_collection_extract("POLYGON") %>%
+          mutate(ID = 1:length(ID)) %>%
+          filter(ID==1)
+      }
+      
       if(!banks[i] == "GB") shpf <- st_transform(shpf,crs = st_crs(loc.sf)$epsg)
       
       surv <- st_as_sf(surv.Live[[banks[i]]],coords = c('slon','slat'),crs = 4326,remove=F) %>% 

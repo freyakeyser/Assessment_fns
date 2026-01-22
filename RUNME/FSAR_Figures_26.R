@@ -71,20 +71,21 @@ for(fun in funs)
 }
 
 # Directories
-#direct <- "Y:/Offshore/Assessment/"
+direct <- "Y:/Offshore/Assessment/"
 #direct_off <- "C:/Users/mcdonaldra/Documents/"
 #direct_fns <- "C:/Users/HAARC/Documents/Github/Assessment_fns/"
-#direct_out <- "C:/Users/HAARC/Documents/testing/"
+direct_out <- "C:/Users/keyserf/Documents/"
+repo <- direct_out 
 
 # Set up
 bank <- "BBn" # set your bank for data/directory filtering
 banks <- c("BBn") # pick your banks for TAC/Landings plot
 fleets <- c("FT", "WF") # pick your fleets for TAC/Landings plot
-assess.year <- 2025 # current year - use for database filtering
+assess.year <- 2026 # current year - use for database filtering
 alpha<-0.05 # sets the CI's (0.5 is set, and most code uses alpha/2 for 95% CIs)
-
-year <- 2025 # current year - used for directories and `r ` calls in text
-yr <- 2024 # fishery year - used for data searching and `r ` calls in text
+language <- "french"
+year <- 2026 # current year - used for directories and `r ` calls in text
+yr <- 2025 # fishery year - used for data searching and `r ` calls in text
 years<-1994:yr 
 years.ribbon <- years
 years.ribbon[length(years.ribbon)] <- years.ribbon[length(years.ribbon)]+0.15
@@ -97,12 +98,12 @@ SFA<- "SFA 26A"
 
 # Sources
 shpf <- st_read(paste0(repo,"/GIS_layers/survey_boundaries/BBn.shp")) # BBN shapefile
-TACs <- read.csv(paste0(direct, "Data/Model/Ref_pts_and_tac.csv"))
+TACs <- read.csv(paste0(direct, "/Data/Model/Ref_pts_and_tac.csv"))
 interim.tac <- TACs$TAC[TACs$bank==bank & TACs$year == year]
 mod.fit<-readRDS(paste0(direct_out,"Data/Model/",year,"/BBn/Results/BBn_model_results.RDS"))
 #mod.dat<-readRDS(paste0(direct_out,"Data/Model/",year,"/BBn/Results/Model_input.RData"))
 #mod.dat<-mod.dat[which(mod.dat$year>1993),]
-bbn.psl<-readRDS(paste0(direct,"/",assess.year,"/Updates/BBn/Figures_and_tables/bbn_post_survey_landings.Rds"))
+bbn.psl<-readRDS(paste0(direct_out,assess.year,"/Updates/BBn/Figures_and_tables/bbn_post_survey_landings.Rds"))
 bbn.psl.total <- round(sum(bbn.psl$pro.repwt,na.rm=T),0)
 #barp<-data.frame(year=1994:2024)
 #mod.dat<-left_join(barp,mod.dat)
@@ -110,12 +111,12 @@ bbn.psl.total <- round(sum(bbn.psl$pro.repwt,na.rm=T),0)
 #pred.grid<-readRDS("Y:/Offshore/Assessment/Framework/SFA_25_26_2024/Model/Results/BBn/R_75_FR_90/BBn_SEAM_model_output_1994_2022_qR_0.33_20_knots_predict_grid.RDS")
 # I suspect these two thing may not have made it onto the network from Claires computer sadly.
 
-pred.grid <-readRDS(paste0(direct_out,"Data/Model/",year,"/BBn/Results/BBn__predict_grid.Rds"))
-#projection<-readRDS("Y:/Offshore/Assessment/Framework/SFA_25_26_2024/Model/Results/BBn/R_75_FR_90/SEAM_1994_2022_qR_0.33_20_knots/Decision_Table/TRP__USR__LRP__RR__g_adj_1_gR_adj_1.Rds")
-projection<-readRDS(paste0(direct_out,"Data/Model/",year,"/BBn/Results/dt_projections.Rds"))
+pred.grid <-readRDS(paste0(direct_out,"Data/Model/",year,"/BBn/Results/BBn_predict_grid.Rds"))
+#projection<-readRDS("Y:/Offshore/Assessment/Framework/SFA_25_26_2024/Model/Results/BBn/R_75_FR_90/SEAM_1994_2022_qR_0.33_20_knots/Decision_Table/TRP_USR_LRP_RR_g_adj_1_gR_adj_1.Rds")
+projection<-readRDS(paste0(direct_out,"Data/Model/",year,"/BBn/Results/R_75_FR_90/SEAM_1994_2026_qR_0.33_20_knots/Decision_Table/TRP_USR_LRP_2000_RR_g_adj_avg_gR_adj_avg.RDS"))
 # B.projection<-comma(round(projection$table[which(projection$table[,1]==TACs$TAC[TACs$year==year & TACs$bank==bank]),3], 0))
 # CH: Fk had it set up that projection and D.tab use the same source file? Changed D.tab to have file with explicit LRP of 2000
-# D.tab<-readRDS(paste0(direct,"Data/Model/",year,"/BBn/Results/R_75_FR_90/SEAM_1994_2025_qR_0.33_20_knots/Decision_Table/TRP__USR__LRP_2000_RR__g_adj_avg_gR_adj_avg.RDS"))
+# D.tab<-readRDS(paste0(direct,"Data/Model/",year,"/BBn/Results/R_75_FR_90/SEAM_1994_2025_qR_0.33_20_knots/Decision_Table/TRP_USR_LRP_2000_RR_g_adj_avg_gR_adj_avg.RDS"))
 
 # Old Notes (FK)
 # load(paste(direct,"Data/Model/", year, "/BBn/Results/Model_testing_results_mixed.RData",sep=""))
@@ -130,18 +131,15 @@ projection<-readRDS(paste0(direct_out,"Data/Model/",year,"/BBn/Results/dt_projec
 
 # Fish.dat
 # Method above has incorrect values for early (<2000) catches - obtain from logs_and_fish
-logs_and_fish(loc="offshore",year = 1994:2024,un=un,pw=pw,db.con=db.con,direct=direct)
+logs_and_fish(loc="offshore",year = 1994:yr,un=un,pw=pw,db.con=db.con,direct=direct_out)
 fish.dat<-merge(new.log.dat,old.log.dat,all=T)
 fish.dat$ID<-1:nrow(fish.dat)
 bbn.fish.dat <- fish.dat |> collapse::fsubset(bank=="BBn") |> collapse::fgroup_by(year) |> collapse::fsummarise(C = sum(pro.repwt,na.rm=T)/1000)
 bbn.fish <- fish.dat |> collapse::fsubset(bank=="BBn") 
 
 options(scipen=999)
-```
 
 ### Model domain map
-
-```{r, SFA 26 Map, echo=F,include=F,message=F}
 theme_set(theme_few(base_size=22))
 
 ## Define map set-up in pecjector
@@ -149,58 +147,57 @@ bbnloc <- pecjector(area =list(y = c(42.1,43.81),x = c(-67.9,-65.1),crs = 4326),
                     add_layer = list(land = 'grey', eez = 'eez' , sfa = 'offshore', bathy = c(50,'both', 500), 
                                      scale.bar = c('br',0.4,-1.35,-1.35)),language = language) + coord_sf(expand=F)
 #sf package update for spherical geometry results in slightly different area calcs than before, so force it NOT to use spherical geometry here.
-  sf::sf_use_s2(FALSE)
-  shpf$are_km2 <- as.numeric(st_area(shpf)/1000000)
-  shpf$are_km2 <- round(shpf$are_km2)
-  shpf$`Area (km^2)` <- factor(shpf$are_km2,levels = shpf$are_km2)
+sf::sf_use_s2(FALSE)
+shpf$are_km2 <- as.numeric(st_area(shpf)/1000000)
+shpf$are_km2 <- round(shpf$are_km2)
+shpf$`Area (km^2)` <- factor(shpf$are_km2,levels = shpf$are_km2)
 
-  # all we want here is SFA labels with subarea distinctions (eg. SFA 26A) so were making/adding them manually rather than altering pecjector to have a new label option
+# all we want here is SFA labels with subarea distinctions (eg. SFA 26A) so were making/adding them manually rather than altering pecjector to have a new label option
 labels_df <- data.frame(
   x = c(-65.6, -66.75, -66.75, -66.275, -66.95, -65.4),
   y = c(43.7, 43.1, 42.9, 42.25, 42.25, 42.6))
-  if(language == "english") labels_df$label <- c("Nova \nScotia", "SFA 26C", "SFA 26A", "SFA 27B", "SFA 27A", "SFA 26B")
-  if(language != "english") labels_df$label <- c("Nouvelle \nÉcosse", "ZPP 26C", "ZPP 26A", "ZPP 27B", "ZPP 27A", "ZPP 26B")
+if(language == "english") labels_df$label <- c("Nova \nScotia", "SFA 26C", "SFA 26A", "SFA 27B", "SFA 27A", "SFA 26B")
+if(language != "english") labels_df$label <- c("Nouvelle \nÉcosse", "ZPP 26C", "ZPP 26A", "ZPP 27B", "ZPP 27A", "ZPP 26B")
 labels_sf <- st_as_sf(labels_df, coords = c("x", "y"), crs = 4326)
-  
+
 if(language == "english") fig.lab <- "Model domain"
 if(language != "english") fig.lab <- "Domaine du modèle"
 
 ## Add customizations to the map to suit needs  
-  bbnloc2 <- bbnloc  + new_scale("fill") + 
-    geom_sf_text(data = labels_sf, aes(label = label), size = 3)+ # adds the labels we defined above
-    geom_sf_pattern(data=shpf, aes(fill=fig.lab),
-            pattern = "stripe", # direct pattern assignment (not mapped)
-            pattern_spacing = 0.02,
-            pattern_density = 0.4,
-            pattern_fill = "sienna2",
-             pattern_colour = "sienna2",
-            colour = NA,
-            alpha=0.2) + # plots the model domain
-    scale_fill_manual(name="",values="sienna2") + # specifies the colour of the model domain
-    coord_sf(crs = 4326, default_crs = 4326, xlim = c(-67.9,-65.1), ylim = c(42.1,43.81), clip = "on", expand = FALSE) + # was having issue with plot collpasing on itself - these conditions help maintain the proper plot area set up in pecjector
-    theme(legend.position = c(0.001, 0.965), # though 0.955 seems strange, this level of accuracy is indeed needed for the scaling/pos of the legend
-          legend.justification = 'left',legend.key.size = unit(0.75,"line"),
-          legend.margin = margin(4,4,4,4),
-          #legend.box.margin = margin(0,0,-10,0),
-          legend.key = element_rect(fill = NA),
-          legend.title = element_blank(),
-          legend.background = element_rect(fill = "white", color = "black", size=0.4),
-          panel.border = element_rect(linewidth = 0.5, fill = NA),
-          axis.title = element_blank(),
-          plot.margin = margin(1, 5, 0, 0, "points"))
+bbnloc2 <- bbnloc  + new_scale("fill") + 
+  geom_sf_text(data = labels_sf, aes(label = label), size = 3)+ # adds the labels we defined above
+  geom_sf_pattern(data=shpf, aes(fill=fig.lab),
+                  pattern = "stripe", # direct pattern assignment (not mapped)
+                  pattern_spacing = 0.02,
+                  pattern_density = 0.4,
+                  pattern_fill = "sienna2",
+                  pattern_colour = "sienna2",
+                  colour = NA,
+                  alpha=0.2) + # plots the model domain
+  scale_fill_manual(name="",values="sienna2") + # specifies the colour of the model domain
+  coord_sf(crs = 4326, default_crs = 4326, xlim = c(-67.9,-65.1), ylim = c(42.1,43.81), clip = "on", expand = FALSE) + # was having issue with plot collpasing on itself - these conditions help maintain the proper plot area set up in pecjector
+  theme(legend.position = c(0.001, 0.965), # though 0.955 seems strange, this level of accuracy is indeed needed for the scaling/pos of the legend
+        legend.justification = 'left',legend.key.size = unit(0.75,"line"),
+        legend.margin = margin(4,4,4,4),
+        #legend.box.margin = margin(0,0,-10,0),
+        legend.key = element_rect(fill = NA),
+        legend.title = element_blank(),
+        legend.background = element_rect(fill = "white", color = "black", size=0.4),
+        panel.border = element_rect(linewidth = 0.5, fill = NA),
+        axis.title = element_blank(),
+        plot.margin = margin(1, 5, 0, 0, "points"))
 bbnloc2
 ## Save the map to get a high-quality figures to include later
 showtext_auto(FALSE)
 if(language == "english") ggsave(filename=paste0(direct_out, year,"/Updates/", bank, 
-                                                  "/Figures_and_tables/FSAR_SurveyAreaMap.png"), bbnloc2, dpi = 600, width = 5.5, height = 4.5)
+                                                 "/Figures_and_tables/FSAR_SurveyAreaMap.png"), bbnloc2, dpi = 600, width = 5.5, height = 4.5)
 if(language != "english") ggsave(filename=paste0(direct_out, year,"/Updates/", bank, "/Figures_and_tables/FSAR_SurveyAreaMap_french.png"), bbnloc2, dpi = 600, width = 5.5, height = 4.5)
 
 showtext_auto(TRUE)
-```
+
 
 ### Spatial plots
 
-```{r, Spatial Timeseries Maps, echo=F,include=F,message=F}
 #####################################################################################################
 ######### SPATIAL BIOMASS FIGURES ###################################################################
 #####################################################################################################
@@ -243,6 +240,7 @@ q.dat.plot<-left_join(knot.gis,qI,by=c("knotID"),multiple="all")
 # Exploitation
 # The catch data
 # So catches from June 2021-May 2022 are called 2021 and removed from the 2021 survey biomass (this is different indexing from how we used to handle this for offshore)
+catchy <- cbind(catchy,0)
 F.dat<-data.frame(B=as.vector(mod.fit$report$areaB[,-ncol(mod.fit$report$areaB)]/1000),
                   C = c(as.vector(as.matrix(catchy[,-c((ncol(catchy)-1),ncol(catchy))])),rep(NA,num.knots)), Year=matYear1, knotID=knots1)
 F.dat <- F.dat %>% dplyr::mutate(exploit = C/(B+C)) # Sticking with how offshore does this (C/(B+C)) C/B or some variant may be more realistic
@@ -268,7 +266,7 @@ spatial.B.plot<- ggplot() + geom_sf(data=B.dat.plot%>% dplyr::filter(Year %in% c
   #+# superscript minus U207B has been phased out, use U02C9 instead
   #theme(axis.text.x=element_text(angle=45,hjust=1))
 # Save for higher quality image
-
+showtext_auto(FALSE)
 if(language != 'english') spatial.B.plot <- spatial.B.plot + 
                                             scale_x_continuous(name = "", breaks = seq(-61.3, -59.3, 0.2),labels = french.west)
 
@@ -338,38 +336,38 @@ showtext_auto(TRUE)
 # showtext_auto(TRUE)
 ######################################################################
 ######### M - Natural Mortality (proportional) #######################
-    mu.brk <- pretty(log(mu.dat.plot$mu))    
-    #mu.brk <- log(c(0.003,0.007,0.02,0.05,0.15,0.4,1))
-    #m.brk <- pretty(log(m.dat.plot$m))
-    mu.lab <- signif(exp(mu.brk),digits=2)
-    
-    if(language == 'english') leg.label <- "Natural \nmortality \n(Proportional)"
-    if(language != 'english') leg.label <- "Mortalité \nnaturelle \n(proportionnelle)"
+mu.brk <- pretty(log(mu.dat.plot$mu))    
+#mu.brk <- log(c(0.003,0.007,0.02,0.05,0.15,0.4,1))
+#m.brk <- pretty(log(m.dat.plot$m))
+mu.lab <- signif(exp(mu.brk),digits=2)
 
-    # spatial.m.plot <-  ggplot() + geom_sf(data=m.dat.plot %>% dplyr::filter(!Year %in% c(2023)),aes(fill=log(m)),color='grey')+
-    spatial.mu.plot <-  ggplot() + geom_sf(data=mu.dat.plot %>% dplyr::filter(Year %in% c((yr-3):yr)),aes(fill=log(mu)),color='grey')+
-      scale_x_continuous(breaks = c(-60.3,-60.1,-59.9) )+#, labels = c("60\u00b018'W","60\u00b06'W","59\u00b054'W")) +
-      scale_y_continuous(breaks = c(42.6, 42.75, 42.9) )+#,labels = c("42\u00b036'N","42\u00b045'N","42\u00b054'N")) +
-      facet_wrap(~Year)+ 
-      scale_fill_viridis_c(breaks = mu.brk, labels = mu.lab,name=leg.label,option = "B",direction =1,begin = 0.2,end=1) 
-    # Save for higher quality image
-    showtext_auto(FALSE)
+if(language == 'english') leg.label <- "Natural \nmortality \n(Proportional)"
+if(language != 'english') leg.label <- "Mortalité \nnaturelle \n(proportionnelle)"
+
+# spatial.m.plot <-  ggplot() + geom_sf(data=m.dat.plot %>% dplyr::filter(!Year %in% c(2023)),aes(fill=log(m)),color='grey')+
+spatial.mu.plot <-  ggplot() + geom_sf(data=mu.dat.plot %>% dplyr::filter(Year %in% c((yr-3):yr)),aes(fill=log(mu)),color='grey')+
+  scale_x_continuous(breaks = c(-60.3,-60.1,-59.9) )+#, labels = c("60\u00b018'W","60\u00b06'W","59\u00b054'W")) +
+  scale_y_continuous(breaks = c(42.6, 42.75, 42.9) )+#,labels = c("42\u00b036'N","42\u00b045'N","42\u00b054'N")) +
+  facet_wrap(~Year)+ 
+  scale_fill_viridis_c(breaks = mu.brk, labels = mu.lab,name=leg.label,option = "B",direction =1,begin = 0.2,end=1) 
+# Save for higher quality image
+showtext_auto(FALSE)
 
 if(language != 'english') spatial.mu.plot <- spatial.mu.plot + 
-                                            scale_x_continuous(name = "", breaks = seq(-61.3, -59.3, 0.2),labels = french.west)
+  scale_x_continuous(name = "", breaks = seq(-61.3, -59.3, 0.2),labels = french.west)
 
-        
-    
+
+
 if(language == 'english')  ggsave(filename=paste0(direct_out, year,"/Updates/", bank, 
                                                   "/Figures_and_tables/spatial.NaturalMortality_prop.png"), 
                                   spatial.mu.plot, dpi = 600, width = 6.5, height = 3.5)
-    
+
 if(language != 'english')  ggsave(filename=paste0(direct_out, year,"/Updates/", bank, 
                                                   "/Figures_and_tables/spatial.NaturalMortality_prop_french.png"), 
                                   spatial.mu.plot, dpi = 600, width = 6.5, height = 3.5)
-        
-    
-    showtext_auto(TRUE)
+
+
+showtext_auto(TRUE)
 
 ####### q - catchability ############################################
 spatial.q.plot <- ggplot() + geom_sf(data=q.dat.plot,aes(fill=qI),col=NA)+
@@ -490,11 +488,9 @@ ann.exploit$FM.UCI <- 1-exp(-ann.exploit$exploit.UCI)
 #Therefore, for the error bar, I use the SE provided by the model for its projection to calculate a CI
 #This is not exactly correct, but will give you a closer CI than what the bootstrap provides using the quantile method because this will guaranteed to be too small
 #For the future, when doing projections and decision tables in the delay difference, simply use rlnorm on B_t-1 (total biomass for last year with data) with the SE from the model fit (se_log_totB).
-```
 
 ### Panel plots
 
-```{r, Panel Plots, echo=F,include=F,message=F}
 # PANEL 1 FIGURES #############################################################################################
 
 # Year to year, you may want to change the axis label intervals for specific plots in scale_x/y_cont (some have been manually set below using breaks = seq())
@@ -746,15 +742,14 @@ showtext_auto(TRUE)
 ## Fully-recruited natural mortality plot
 #max(pred.proc$log_processes$m.UCI, na.rm=T)
 
-
 if(language == "english") 
 {
-  y.lab <- "Natural mortality (Proportional)"
+  y.lab <- "Natural mortality (proportional rate)"
   ltm.lab <- "LTM"
 }
 if(language != "english") 
 {
-  y.lab <-  "Mortalité naturelle (proportionnelle)"
+  y.lab <-"Mortalité naturelle (taux proportionnel)"
   ltm.lab <- "MLT"
 }
 
@@ -841,5 +836,3 @@ showtext_auto(TRUE)
 # # alternative figure with just condition for FSAR doc - include nat mort and condition as seperate figures if doing this
 # ggsave(filename=paste0(direct_out, year,"/Updates/", bank, "/Figures_and_tables/FSAR_panel3_condition.png"), cf.plot, dpi = 600, width = 4.5, height = 3.5)
 # showtext_auto(TRUE)
-```
-```

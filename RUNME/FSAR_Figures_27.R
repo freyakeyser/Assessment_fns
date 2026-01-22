@@ -63,8 +63,8 @@ bank <- "GBa"
 banks <- c("GBa") # pick your banks for TACs/Landings table
 fleets <- c("FT", "WF") # pick your fleets for TACs/Landings table
 alpha<-0.05
-year <- 2025 # current year
-yr <- 2024 # fishery year
+year <- 2026 # current year
+yr <- 2025 # fishery year
 years<-1986:yr
 years.ribbon <- years
 years.ribbon[length(years.ribbon)] <- years.ribbon[length(years.ribbon)]+0.2
@@ -86,20 +86,20 @@ for(fun in funs)
 }
 
 # Sources
-direct <- "Y:/Offshore/Assessment/"
-direct_out <- "D:/testing_folder/CSAS_Claire_2025/"
-repo <- "D:/Github/"
+direct <- "C:/Users/keyserf/Documents/"
+direct_out <- "C:/Users/keyserf/Documents/"
+repo <- "C:/Users/keyserf/Documents/Github/"
 
 
 load(paste0(direct_out,"Data/Model/",year,"/GBa/Results/Model_testing_results.RData"))
 load(paste0(direct_out,"Data/Model/",year,"/GBa/Results/Model_results_and_diagnostics.RData"))
-D.tab<-read.csv(paste0(direct,"2025/Updates/GBa/Figures_and_tables/Decision_GBa.csv"))
+D.tab<-read.csv(paste0(direct,"/", year, "/Updates/GBa/Figures_and_tables/Decision_GBa.csv"))
 TACs <- read.csv(paste0(direct, "Data/Model/Ref_pts_and_tac.csv"))
 # TACs[TACs$bank==bank & TACs$year==year,4]<-20
 
 # Ref pts
-URP<-round(URP[[bank]],-1)
-LRP<-round(LRP[[bank]],-1)
+URP<-round(URP[[bank]],0) # these were rounded to -1... I don't know why!
+LRP<-round(LRP[[bank]],0) # these were rounded to -1... I don't know why!
 RR<-0.25
 interim.tac <- TACs$TAC[TACs$bank==bank & TACs$year == year]
 # load(paste(direct,"Data/Model/", year, "/BBn/Results/Model_testing_results_mixed.RData",sep=""))
@@ -109,7 +109,7 @@ interim.tac <- TACs$TAC[TACs$bank==bank & TACs$year == year]
 # load(paste0(direct,"Framework/SFA_25_26_2024/Model/Results/Sab_SS_model/R_75_FR_90/Sable_SSmodel_results.RData"))
 
 ## tac/landing data; 1986 is year model starts, but technically this database goes back to 1984
-logs_and_fish(loc="offshore",year = 1986:2024,un=un,pw=pw,db.con=db.con,direct=direct)
+logs_and_fish(loc="offshore",year = 1986:yr,get.local = T, get.marfis = F, direct=direct)
 fish.dat<-merge(new.log.dat,old.log.dat,all=T)
 fish.dat$ID<-1:nrow(fish.dat)
 gba.fish.dat <- fish.dat |> collapse::fsubset(bank=="GBa") |> collapse::fgroup_by(year) |> collapse::fsummarise(C = sum(pro.repwt,na.rm=T)/1000)
@@ -172,12 +172,9 @@ if(language != "english")
   usr.lab <- "PRS"
   lrp.lab <- "PRL"
 }
+
 # Get CI's for projection boxplot
-# 80%
-
-
-pB<-DD.out$GBa$sims.list$B.p[,3]
-#pB.box<-pB[pB>quantile(pB,alpha*2)&pB<quantile(pB,1-alpha*2)]
+pB<-DD.out$GBa$sims.list$B.p[,which(DD.out$GBa$data$C.p==(interim.tac)+proj.catch$GBa)]
 pB.box <- as.data.frame(t(quantile(pB, probs = c(0.10, 0.25, 0.50, 0.75, 0.90))))
 names(pB.box) <- c("ymin", "lower", "middle", "upper", "ymax")
 pB.box$year <- year
@@ -202,8 +199,8 @@ bm.ts.plot <- ggplot() +
               alpha=0.2,fill="grey20") +
   geom_line(data=B.dat, aes(years,median),color='black', linewidth = 0.4) + 
   geom_point(data=B.dat, aes(years,median), size=1) + 
-  geom_boxplot(data = pB.box[1:5]/1000, stat = "identity",
-               aes(x = year,ymin = ymin,lower = lower,middle = middle,upper = upper,ymax = ymax),
+  geom_boxplot(data = pB.box, stat = "identity",
+               aes(x = year,ymin = ymin/1000,lower = lower/1000,middle = middle/1000,upper = upper/1000,ymax = ymax/1000),
                outlier.shape=NA) +
   geom_point(aes(year,pB.box$middle/1000))+
   scale_color_manual(name="",values=c("firebrick","goldenrod1"))+
@@ -390,7 +387,7 @@ theme_set(theme_few(base_size = 12))
 
 if(language == "english") 
 {
-  y.lab <- "Natural mortality (proportional rate)"
+  y.lab <- "Natural mortality\n(proportional rate, recruit)"
   ltm.lab <- "LTM"
 }
 if(language != "english") 
@@ -449,7 +446,7 @@ showtext_auto(TRUE)
 
 if(language == "english") 
 {
-  y.lab <- "Natural mortality (proportional rate)"
+  y.lab <- "Natural mortality\n(proportional rate, fully-recruited)"
   ltm.lab <- "LTM"
 }
 if(language != "english") 
@@ -569,3 +566,4 @@ if(language != "english") ggsave(filename=paste0(direct_out, year,"/Updates/", b
                                  cf.plot, dpi = 600, width = 4.5, height = 3.5)
 
 showtext_auto(TRUE)
+

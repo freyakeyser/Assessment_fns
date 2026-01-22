@@ -172,7 +172,7 @@ olex_import <- function(filename, ntows=NULL, type, length="sf", correction_fact
     
     trackpts <- rbind(trackpts, trackpts1)
   }
-  
+  browser()
   # olex is in UTC
   #trackpts$datetime <- trackpts$datetime #+ hours(4)
   
@@ -187,7 +187,7 @@ olex_import <- function(filename, ntows=NULL, type, length="sf", correction_fact
     print(paste0(getwd(), "/csv_to_edit.csv"))
     return()
   }
-  
+  browser()
   if(!is.null(edited_csv)){
     trackpts <- read.csv(file=edited_csv, header = T)
     message("Note: edited csv file datetime must be in yyyy-mm-dd hh:mm:ss format, and edited end points must be labelled Garnstopp")
@@ -207,7 +207,6 @@ olex_import <- function(filename, ntows=NULL, type, length="sf", correction_fact
     }
     trackpts <- unsmoothed
   }
-  
   starttime <- unique(trackpts[trackpts$Ferdig.forenklet_4=="Garnstart", c("tow", "datetime")])
   starttime$start <- ymd_hms(starttime$datetime)
   starttime <- dplyr::select(starttime, -datetime)

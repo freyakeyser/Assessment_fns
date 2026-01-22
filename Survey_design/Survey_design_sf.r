@@ -107,7 +107,7 @@ Survey.design <- function(yr = as.numeric(format(Sys.time(), "%Y")) ,direct, exp
   require(RCurl)|| stop("Install the RCurl Package please")
   require(sf) || stop("Install the sf package before you get lost")
   require(tidyverse) || stop("Install the tidyverse package so you can do everything")
-  require(maptools)|| stop("Install maptools you fools")
+ # require(maptools)|| stop("Install maptools you fools")
   require(dplyr) || stop("Install dplyr, it's the best")
   if(fig == "leaflet") require(leaflet) || stop("Please install the leaflet package")
   # load in the functions we need to do the survey design
@@ -220,8 +220,8 @@ for(fun in funs)
     
     if(nrow(sb > 0 ))
     {
-      sb.sp <- PolySet2SpatialPolygons(as.PolySet(sb, projection = "LL"))
-      sb <- st_as_sf(sb.sp, coords = c("X","Y"),crs=4326)
+      #sb.sp <- PolySet2SpatialPolygons(as.PolySet(sb, projection = "LL"))
+      sb <- st_as_sf(sb, coords = c("X","Y"),crs=4326)
       
     }
     
@@ -332,7 +332,7 @@ for(fun in funs)
         writetows[,c("X", "Y")] <- st_coordinates(towlst[[i]]$Tows)
         st_geometry(writetows) <- NULL
         if(add.extras==T) {
-          extras$Poly.ID <- "extra"
+          extras$Poly.ID <- 0
           writetows <- full_join(writetows, extras[,c("EID", "X", "Y", "Poly.ID")])
           if(!nrow(writetows) == (nrow(towlst[[i]]$Tows) + nrow(extras))) stop("extras were not added properly")
         }
