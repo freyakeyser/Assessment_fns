@@ -1213,7 +1213,7 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
         xlab(NULL) +
         ylab(NULL)
     }
-    
+    #browser()
   # Now add in option to show axis labels in Deg-Min and Deg-Min-Sec if you want.
     if(!is.null(axes) | language == "french")
     {

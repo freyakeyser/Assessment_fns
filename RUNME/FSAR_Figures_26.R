@@ -83,7 +83,8 @@ banks <- c("BBn") # pick your banks for TAC/Landings plot
 fleets <- c("FT", "WF") # pick your fleets for TAC/Landings plot
 assess.year <- 2026 # current year - use for database filtering
 alpha<-0.05 # sets the CI's (0.5 is set, and most code uses alpha/2 for 95% CIs)
-language <- "french"
+#language <- "french"
+language <- "english"
 year <- 2026 # current year - used for directories and `r ` calls in text
 yr <- 2025 # fishery year - used for data searching and `r ` calls in text
 years<-1994:yr 
@@ -97,8 +98,8 @@ LRP<-2000 # set manually for now, no USR
 SFA<- "SFA 26A"
 
 # Sources
-shpf <- st_read(paste0(repo,"/GIS_layers/survey_boundaries/BBn.shp")) # BBN shapefile
-TACs <- read.csv(paste0(direct, "/Data/Model/Ref_pts_and_tac.csv"))
+shpf <- st_read(paste0(repo,"Github/GIS_layers/survey_boundaries/BBn.shp")) # BBN shapefile
+TACs <- read.csv(paste0(direct_out, "/Data/Model/Ref_pts_and_tac.csv"))
 interim.tac <- TACs$TAC[TACs$bank==bank & TACs$year == year]
 mod.fit<-readRDS(paste0(direct_out,"Data/Model/",year,"/BBn/Results/BBn_model_results.RDS"))
 #mod.dat<-readRDS(paste0(direct_out,"Data/Model/",year,"/BBn/Results/Model_input.RData"))
@@ -785,17 +786,17 @@ FR.nat.mort.plot
 showtext_auto(FALSE)
 
 if(language == "english") ggsave(filename=paste0(direct_out, year,"/Updates/", bank, 
-                                                 "/Figures_and_tables/FSAR_FRnatmort.png"), 
+                                                 "/Figures_and_tables/FSAR_natmort.png"), 
                                  FR.nat.mort.plot, dpi = 600, width = 6.5, height =5)
 if(language == "english") ggsave(filename=paste0(direct_out, year,"/Updates/", bank, 
-                                                 "/Figures_and_tables/FSAR_panel2_FRnatmort.png"), 
+                                                 "/Figures_and_tables/FSAR_panel2_natmort.png"), 
                                  FR.nat.mort.plot, dpi = 600, width = 4.5, height = 3.5)
 
 if(language != "english") ggsave(filename=paste0(direct_out, year,"/Updates/", bank, 
-                                                 "/Figures_and_tables/FSAR_FRnatmort_french.png"), 
+                                                 "/Figures_and_tables/FSAR_natmort_french.png"), 
                                  FR.nat.mort.plot, dpi = 600, width = 6.5, height =5)
 if(language != "english") ggsave(filename=paste0(direct_out, year,"/Updates/", bank, 
-                                                 "/Figures_and_tables/FSAR_panel2_FRnatmort_french.png"), 
+                                                 "/Figures_and_tables/FSAR_panel2_natmort_french.png"), 
                                  FR.nat.mort.plot, dpi = 600, width = 4.5, height = 3.5)
 
 

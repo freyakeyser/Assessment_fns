@@ -119,9 +119,9 @@ bbn.fish$pro.repwt <- bbn.fish$pro.repwt/1000
 live.subset <- surv.dat %>% dplyr::filter(state == 'live' & random ==1)
 dead.subset <- surv.dat %>% dplyr::filter(state== "dead" & random ==1)
 # Note that the clapper index uses only fully-recruited scallop
-live.input <- data.frame(I = live.subset$com.bm, IR = live.subset$rec.bm,year = live.subset$year,tow = live.subset$tow,tot.live.com = live.subset$com,lat = live.subset$lat,lon=live.subset$lon,tow_type = live.subset$random)
-clap.input <- data.frame(L = dead.subset$com,tow = dead.subset$tow,year = dead.subset$year,tow_type = dead.subset$random)
-mod.input <- left_join(live.input,clap.input,by=c('tow','year','tow_type'))
+live.input <- data.frame(I = live.subset$com.bm, IR = live.subset$rec.bm, year = live.subset$year, tow = live.subset$tow, tot.live.com = live.subset$com, lat = live.subset$lat, lon=live.subset$lon, tow_type = live.subset$random)
+clap.input <- data.frame(L = dead.subset$com, tow = dead.subset$tow, year = dead.subset$year, tow_type = dead.subset$random)
+mod.input <- left_join(live.input, clap.input,by=c('tow','year','tow_type'))
 mod.input$N <- round(mod.input$tot.live.com + mod.input$L)
 # Looks like there are no values > 0 but < 0.5, so the low clapper numbers should all round up to 1 (which makes sense as you'd only get < 0.5 if we had tows twice as long as they should be)
 mod.input$L <- round(mod.input$L)

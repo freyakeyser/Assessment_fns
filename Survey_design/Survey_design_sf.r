@@ -197,6 +197,7 @@ for(fun in funs)
   {
     # Grab the bank
     bnk <- banks[i]
+    
     # Grab any extra tows selected for that bank and make them a PBS mapping object
     if(add.extras ==F) extras <- data.frame(bill = NULL) # Did it this way to minimize the amount of code I need to change...
     if(add.extras == T) 
@@ -622,8 +623,13 @@ for(fun in funs)
       } # end (if(load_stations==F))
       
       if(load_stations==T){
-        load(paste0(direct, "Data/Survey_Data/", yr, "/Spring/",bnk,"/", seedlab, "/towlst.RData"))
+        load(paste0(direct, "Data/Survey_Data/", yr, "/Spring/",bnk,"/towlst.RData"))
         towlst[[i]] <- savetowlst
+      }
+      
+      if(!load_stations %in% c(T, F)) {
+        readtows <- read.csv(load_stations)
+        towlst[[i]] <- st_as_sf(readtows, coords=c("X", "Y"), remove=F, crs=4326)
       }
       
       # attr(towlst[[i]],"projection") <- "LL"
@@ -674,7 +680,7 @@ for(fun in funs)
             cols <- c("transparent")
           }
           
-          if(bnk %in% c("Mid","GB")) tmp.sf$`Tow type` <- '3'
+          if(bnk %in% c("Mid","GB","Ban")) tmp.sf$`Tow type` <- '3'
           
           # So what do we want to do with the points, first plots the station numbers
           if(point.style == "stn_num") bp2 <- bp + geom_sf_text(data=tmp.sf,aes(label = EID),size=pt.txt.sz) #text(towlst[[i]]$Tows$X,towlst[[i]]$Tows$Y,label=towlst[[i]]$Tows$EID,col='black', cex=0.6)
@@ -701,16 +707,17 @@ for(fun in funs)
               xlim(ggplot_build(bp)$layout$panel_scales_x[[1]]$range$range) +
               ylim(ggplot_build(bp)$layout$panel_scales_y[[1]]$range$range)
           }
-          # # And if there are any seedboxes
-          
+        
           # And if there are any seedboxes
           if(nrow(sb) > 0) bp2 <- bp2 + geom_sf(data=sb,fill=NA)                                                                                                                  
           cap <- paste("Survey stations (n = ",length(tmp.sf$EID),")")
           if(bnk != "Ban") cap <- paste("Fixed stations (n = ",length(tmp.sf$EID),")",sep="")
+          if(bnk == "Ban") cap <- paste("Fixed stations (n = ",length(tmp.sf$Tow),")",sep="")
           if(nrow(extras >0 )) cap <- paste(cap," \n Extra stations (n = ",
                                             nrow(extras),")",sep="",collapse =" ")
-          sub.title <- paste("Note: The random seed was set to ",seed,sep="")
-          if(bnk != "Ban") sub.title <- ''
+          #sub.title <- paste("Note: The random seed was set to ",seed,sep="")
+          #if(bnk != "Ban") 
+            sub.title <- ''
           pf <- bp2 + labs(title= paste("Survey (",bnk,"-",yr,")",sep=""),
                            subtitle = sub.title,
                            caption = cap)  + coord_sf(expand=F)

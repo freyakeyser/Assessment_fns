@@ -32,30 +32,30 @@ seed1 <- floor(runif(n = 1, min = 10000, max=99999))
 # 2023 seed1 = 54880
 # 2024 seed1 = 26858 # i <- 26862
 # 2025 seed1 <- 38790 # For 2025 I ran 5 more for browns because the first batch sucked!!
-seed1 <- 71805
+seed1 <- 71809
 t1 <- Sys.time()
-for(i in seed1:(seed1+4)){
-  Survey.design(yr = yr,banks = "Ger",direct = direct,export=T,relief.plots = F,
-                fig="png",seed=i, repo=direct_fns, point.style = "stn_num",
+for(i in seed1:(seed1+0)){
+  Survey.design(yr = yr,banks = "Ger",direct = direct,export=T,relief.plots = T,
+                fig="png",seed=i, repo=direct_fns, point.style = "points",
                 pt.txt.sz=3, x.adj=0.04, y.adj=0.001, ger.new = 80, ger.rep=20,
                 add.extras=T)#,
                 #load_stations="Y:/Offshore/Assessment/Data/Survey_data/2023/Spring/Ger/Preliminary_Survey_design_Tow_locations_Ger54880_tpd.csv")
   # 
   # Survey.design(yr = yr,banks = "BBn",direct = direct,export=T,
-  #               fig="png",seed=i, repo=direct_fns,point.style = "stn_num",
+  #               fig="png",seed=i, repo=direct_fns,point.style = "points",
   #               pt.txt.sz=3, x.adj=0.02, y.adj=0.001, add.extras=F,
   #               cables=T, tow_buffer=F, load_stations=F)
-  #               #load_stations="Y:/Offshore/Assessment/Data/Survey_data/2023/Spring/BBn/Preliminary_Survey_design_Tow_locations_BBn54882_tpd.csv")
+                #load_stations="Y:/Offshore/Assessment/Data/Survey_data/2023/Spring/BBn/Preliminary_Survey_design_Tow_locations_BBn54882_tpd.csv")
 
   # Survey.design(yr = yr,banks = "BBs",direct = direct,export=T,
   #               fig="png",seed=i, repo=direct_fns, point.style = "stn_num",
   #               x.adj=0.04, y.adj=0.001,add.extras=F)
 
-  # Survey.design(yr = yr,banks = "Sab",direct = direct, export=T,
-  #               fig="png",seed=i, repo=direct_fns,point.style = "points",
-  #               x.adj=0.035, y.adj=0.001, add.extras=T,
-  #               tow_buffer=F)#,
-                #load_stations="Y:/Offshore/Assessment/Data/Survey_data/2023/Spring/Sab/Preliminary_Survey_design_Tow_locations_Sab54884_tpd.csv")
+  Survey.design(yr = yr,banks = "Sab",direct = direct, export=T,
+                fig="png",seed=i, repo=direct_fns,point.style = "stn_num",
+                x.adj=0.035, y.adj=0.001, add.extras=T,
+                tow_buffer=F)#,
+ # load_stations="Y:/Offshore/Assessment/Data/Survey_data/2023/Spring/Sab/Preliminary_Survey_design_Tow_locations_Sab54884_tpd.csv")
 
 #   Survey.design(yr = yr,banks = "GBb",direct = direct, export=T,
 #                 fig="png",seed=i, repo=direct_fns,point.style = "stn_num",
@@ -76,7 +76,8 @@ Survey.design(yr = yr,banks = "GB",direct = direct,export=T,fig="png",
 
 Survey.design(yr = yr,banks = "Ban",direct = direct,export=T,fig="png",
               seed=NULL, repo=direct_fns, point.style = "points", 
-              pt.txt.sz=3, x.adj=0.045, y.adj=0.001,add.extras=F, load_stations=F)
+              pt.txt.sz=3, x.adj=0.045, y.adj=0.001,add.extras=F, 
+              load_stations="Y:/Offshore/Assessment/Data/Survey_data/2026/Spring/Ban/Preliminary_Survey_design_Tow_locations_Ban.csv")
 
 t2 <- Sys.time()
 t2-t1 # ~10 minutes to run all banks for 1 seed. (so about an hour-1.5 hours for all banks, 5 seeds)

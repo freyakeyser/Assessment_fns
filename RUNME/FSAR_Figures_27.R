@@ -120,15 +120,21 @@ options(scipen=999)
 
 ###### ADDED EXTRA THEME CONDITIONS TO ALL PLOTS SO COWPOT::PLOT_GRID DOESN'T MISALIGN FIGURES
 
-if(language == "english") y.lab <- "Landings (meat, kt)"
-if(language != "english") y.lab <- "Débarquements (chair, kt)"
+if(language == "english") {
+  y.lab <- "Landings (meat, kt)"
+  tac.lab <- "TAC"
+}
+if(language != "english") {
+  y.lab <- "Débarquements (chair, kt)"
+  tac.lab <- "TAC" 
+}
 ###### (A) Tac Landings Plots
 theme_set(theme_few(base_size = 22)) # DK changed from 14 to 22 for French figures
 # decades <- seq(1990, max(DD.out$GBa$data$year, na.rm = TRUE), by = 10)
 tac_land_plot <- ggplot() +
   geom_bar(aes(x = gba.fish.dat$year, y = gba.fish.dat$C/1000),stat = "identity", fill="grey50", alpha = 0.6, width = 0.75) + 
   geom_line(data = TACs[TACs$bank == bank & TACs$year %in% DD.out$GBa$data$year,],
-            aes(x = as.numeric(year), y = as.numeric(TAC/1000), col = "TAC"), 
+            aes(x = as.numeric(year), y = as.numeric(TAC/1000), col = tac.lab), 
             linewidth = 0.5, linetype = "solid") + 
   scale_color_manual(name = "", values = "black") +
   ylab(y.lab) +
@@ -284,9 +290,15 @@ showtext_auto(TRUE)
 ###### (D) Recruit B
 ######### (C) Estimated proportional exploitation rate / natural mortality plot
 # Annual Exploit ######### NOT A PLOT
-if(language == "english")  y.lab <- "Exploitation (proportional rate)"
+if(language == "english")  {
+  y.lab <- "Exploitation (proportional rate)"
+  rr.lab <- "RR"
+}
 
-if(language != "english") y.lab <- "Exploitation (taux proportionnel)"
+if(language != "english") {
+  y.lab <- "Exploitation (taux proportionnel)"
+  rr.lab <- "ER"
+}
 
 mu.dat <- data.frame(
   year = years,
@@ -298,7 +310,7 @@ exploit.latest <- round(mu.dat$median[mu.dat$year==yr],2)
 # plot
 e.m.plot <- ggplot(data=mu.dat) + 
   geom_ribbon(aes(ymin=lower.ci,ymax=upper.ci,x=years.ribbon),alpha=0.2,fill="grey10") +
-  geom_hline(aes(yintercept=RR,col="RR"), lty="dotted", alpha=0.7, linewidth=0.8)+
+  geom_hline(aes(yintercept=RR,col=rr.lab), lty="dotted", alpha=0.7, linewidth=0.8)+
   geom_line(aes(x=year,y=median),col="black" , linewidth = 0.4) + 
   geom_point(aes(x=year,y=median),col="black" , size=1) +
   scale_color_manual(name="",values=c("grey20"))+
@@ -512,24 +524,24 @@ showtext_auto(TRUE)
 ###################### PANEL 3 - Condition #########################################################
 if(language == "english") 
 {
-  y.lab <- "Relative condition (prop. of maximum)"
+  y.lab <- expression(paste("Condition factor (", NULL, frac(g,dm^3) ,")"))
   ltm.lab <- "LTM"
 }
 if(language != "english") 
 {
-  y.lab <-"État relatif (prop. du maximum)"
+  y.lab <- expression(paste("Coefficient de condition (", NULL, frac(g,dm^3) ,")"))
   ltm.lab <- "MLT"
 }
 
 cf.max <- max(mod.dat$GBa$CF, na.rm=T)
-cf.ltm <- round(median(mod.dat$GBa$CF[-length(mod.dat$GBa$CF)]/cf.max),3)
+cf.ltm <- round(median(mod.dat$GBa$CF[-length(mod.dat$GBa$CF)]),3)
 cf.plot <- ggplot() + 
   geom_hline(aes(yintercept=cf.ltm,col=ltm.lab),lty="dashed", alpha=0.9) +
-  geom_line(aes(x=mod.dat$GBa$year[-1:-2],y=mod.dat$GBa$CF[-1:-2]/cf.max),col="black", linewidth = 0.4) + 
-  geom_point(aes(x=mod.dat$GBa$year[-1:-2],y=mod.dat$GBa$CF[-1:-2]/cf.max),col="black", size=1) + 
+  geom_line(aes(x=mod.dat$GBa$year[-1:-2],y=mod.dat$GBa$CF[-1:-2]),col="black", linewidth = 0.4) + 
+  geom_point(aes(x=mod.dat$GBa$year[-1:-2],y=mod.dat$GBa$CF[-1:-2]),col="black", size=1) + 
   xlab("") + ylab(y.lab) + 
   scale_color_manual(name="",values=c("grey20"))+
-  coord_cartesian(xlim=c(min(years)-1,max(years)+2),ylim=c(0,1.06))+
+  coord_cartesian(xlim=c(min(years)-1,max(years)+2))+
   scale_x_continuous(breaks=seq(1985,max(years)+2,5),
                      # (hello future modelers!) Need to adjust labels once we get to 2035. In 2030 add [, ""]. In 2035 add: [,2035].
                      labels = c(1985, "", 1995, "", 2005, "", 2015, "", 2025),
@@ -546,11 +558,17 @@ cf.plot
 panel_2 <- cowplot::plot_grid(R.nat.mort.plot, FR.nat.mort.plot, cf.plot, align="v",ncol=2,axis="lr")
 showtext_auto(FALSE)
 # panel with natural mortality and condition
-if(language == "english")  ggsave(filename=paste0(direct_out, year,"/Updates/", bank, "/Figures_and_tables/FSAR_panel2_FmortCondition.png"), panel_2, dpi = 600, width = 9, height = 7)
+if(language == "english")  ggsave(filename=paste0(direct_out, year,"/Updates/", bank, 
+                                                  "/Figures_and_tables/FSAR_panel2_FmortCondition.png"), panel_2, dpi = 600, width = 9, height = 7)
+# panel with natural mortality and condition
+if(language == "english")  ggsave(filename=paste0(direct_out, year,"/Updates/", bank, 
+                                                  "/Figures_and_tables/FSAR_panel2_FmortCondition.png"), panel_2, dpi = 600, width = 9, height = 7)
 # figure for presentations (larger scale)
-if(language == "english") ggsave(filename=paste0(direct_out, year,"/Updates/", bank, "/Figures_and_tables/FSAR_condition.png"), cf.plot, dpi = 600, width = 6.5, height =5)
+if(language == "english") ggsave(filename=paste0(direct_out, year,"/Updates/", bank, 
+                                                 "/Figures_and_tables/FSAR_condition.png"), cf.plot, dpi = 600, width = 6.5, height =5)
 # figure for FSAR document
-if(language == "english") ggsave(filename=paste0(direct_out, year,"/Updates/", bank, "/Figures_and_tables/FSAR_panel3_condition.png"), cf.plot, dpi = 600, width = 4.5, height = 3.5)
+if(language == "english") ggsave(filename=paste0(direct_out, year,"/Updates/", bank, 
+                                                 "/Figures_and_tables/FSAR_panel3_condition.png"), cf.plot, dpi = 600, width = 4.5, height = 3.5)
 # Frenched
 
 if(language != "english")  ggsave(filename=paste0(direct_out, year,"/Updates/", bank, 

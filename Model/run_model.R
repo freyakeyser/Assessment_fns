@@ -3,7 +3,7 @@
 
 run_model <- function(banks, yr, export.tables, direct, direct_fns, direct_out, nickname, run.model = T, model.dat = NULL,
                       strt.mod.yr=1986, nchains = 8,niter = 175000, nburn = 100000, nthin = 20,final.run = F,parallel = T,
-                      make.diag.figs=T, make.update.figs=T, fig="screen", language="en",
+                      make.diag.figs=T, make.update.figs=T, decision.seq=NULL, fig="screen", language="en",
                       jags.model = "Assessment_fns/Model/DDwSE3_jags.bug",seed = 123,parameters = NULL){
   
   require(R2jags) || stop("You need the R2jags package installed or this ain't gonna work")
@@ -253,6 +253,7 @@ for(fun in funs)
       # The catch since the survey for the most recent year is this, if there was no catch set this to 0.
       proj.catch[[bnk]] <- max(proj.dat[[bnk]]$catch[proj.dat[[bnk]]$year == max(DD.dat$year)],0)
       # Get the low and upper boundaries for the decision table (this might be a silly way to do this...)
+      
       if(bnk %in% c("GBa","BBn"))
       {
         D_low[[bnk]] <- subset(manage.dat,year==(max(DD.dat$year)+1) & bank == bnk)$D_tab_low
@@ -261,7 +262,7 @@ for(fun in funs)
       # If we are looking at one of the sub-areas we will go for 1/3 of the mean biomass estimate for the current year...
       if(!bnk %in% c("GBa","BBn")) {D_low[[bnk]] <- 0; D_high[[bnk]] <- out$BUGSoutput$mean$B[length(out$BUGSoutput$mean$B)]/3}
       # The increment size for the decision table.  500 for GBa and 50 for BBn
-      step <- ifelse(bnk == "GBa", 500,50)
+      step <- ifelse(bnk == "GBa", 500,50) 
       
       # The interim TAC is known for GBa and BBn,
       if(bnk %in% c("GBa","BBn")) TACi[[bnk]] <- subset(manage.dat,year== (max(DD.dat$year)+1) & bank == bnk)$TAC
@@ -272,7 +273,7 @@ for(fun in funs)
         if(bnk=="GBa") step <- 100
         if(bnk=="BBn") step <- 10
       }
-      
+
       # The URP and LRP for the bank, for the moment only GBa has been accepted so it's the only one used.
       # For more info on GBa reference points: see Y:\Offshore\Assessment\Non-Github archive and documentation\Help and Documentation\GBa Reference Points Literature Review.docx 
       if(bnk %in% c("GBa","BBn"))
@@ -286,7 +287,8 @@ for(fun in funs)
       if(!bnk %in% c("GBa","BBn")) {URP[[bnk]] <- NA; LRP[[bnk]]<- NA}
       
       # Get the projection scenarios of interest
-      if(length(proj.catch[[bnk]]) > 0) proj[[bnk]] <- seq(D_low[[bnk]],D_high[[bnk]],step) + proj.catch[[bnk]]
+      if(length(proj.catch[[bnk]]) > 0 & is.null(decision.seq)) proj[[bnk]] <- seq(D_low[[bnk]],D_high[[bnk]],step) + proj.catch[[bnk]]
+      if(length(proj.catch[[bnk]]) > 0 & !is.null(decision.seq)) proj[[bnk]] <- decision.seq + proj.catch[[bnk]]
       # If we don't have projected catch data yet (i.e. I'm running the model before the logs have data in them..)
       if(length(proj.catch[[bnk]]) == 0) 
       {

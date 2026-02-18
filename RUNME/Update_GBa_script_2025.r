@@ -101,13 +101,13 @@ for(b in banks){
     print(b)
     print(it)
     # uncomment this the first time!
-    # model_inputs(bank=b,
-    #              yr=2025, # the survey year, not the current year if running in January-April
-    #              impute=it,
-    #              nickname=NULL,
-    #              direct,
-    #              direct_fns,
-    #              survey.obj="C:/Users/keyserf/Documents/temp_data/Data/Survey_data/2025/Survey_summary_output/Survey_all_results.RData")
+    model_inputs(bank=b,
+                 yr=2025, # the survey year, not the current year if running in January-April
+                 impute=it,
+                 nickname=NULL,
+                 direct,
+                 direct_fns,
+                 survey.obj="C:/Users/keyserf/Documents/temp_data/Data/Survey_data/2025/Survey_summary_output/Survey_all_results.RData")
     
     # runs the model IF run.model=T, and creates all figures
     run_model(banks=b,
@@ -127,6 +127,7 @@ for(b in banks){
               export.tables=T,
               make.diag.figs = T,
               make.update.figs = T,
+              decision.seq=seq(0,2000,100),# set to NULL for default!
               language="en",
               fig="png")
     
