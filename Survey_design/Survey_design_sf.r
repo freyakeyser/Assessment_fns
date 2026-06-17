@@ -597,7 +597,7 @@ for(fun in funs)
     
     if(bnk %in% c("Mid","GB","Ban")) 
     {
-      
+      browser()
       if(load_stations==F){#Read5
         towlst[[i]] <-  subset(read.csv(paste(direct,"Data/Survey_data/fixed_station_banks_towlst.csv",sep="")),Bank == bnk)
         
@@ -630,7 +630,7 @@ for(fun in funs)
       if(!load_stations %in% c(T, F)) {
         readtows <- read.csv(load_stations)
         towlst[[i]] <- st_as_sf(readtows, coords=c("X", "Y"), remove=F, crs=4326)
-      }
+        }
       
       # attr(towlst[[i]],"projection") <- "LL"
       if(plot == T)
@@ -658,6 +658,8 @@ for(fun in funs)
         {
           # Now to get the points and the colors all tidy here...
           tmp <- towlst[[i]]
+          extras <- tmp[tmp$Tow.type=="exploratory",]
+          tmp <- tmp[tmp$Tow.type=="fixed",]
           
           if(nrow(extras) > 0) 
           {
@@ -672,20 +674,25 @@ for(fun in funs)
           if(bnk=="Mid") bp <- pecjector(area = bnk,repo = 'github',c_sys = 4326, add_layer = list(bathy = c(50,'c'), sfa = 'offshore'),plot=F, quiet=T)# + 
           
           if(nrow(extras)>0) {
-            shapes <- c(24,21)
-            cols <- c("darkorange", "transparent", "transparent")
+            shapes <- c(21,24)
+            cols <- c("transparent","darkorange")
           }
           if(nrow(extras)==0) {
             shapes <- c(21)
             cols <- c("transparent")
           }
           
-          if(bnk %in% c("Mid","GB","Ban")) tmp.sf$`Tow type` <- '3'
+          if(bnk %in% c("Mid","GB")) tmp.sf$`Tow type` <- '3'
+          if(bnk %in% c("Ban")) {
+            tmp.sf$`Tow type` <- tmp.sf$STRATA
+            tmp.sf$`Tow type`[is.na(tmp.sf$`Tow type`)] <- '3'
+            tmp.sf$`Tow type`[tmp.sf$`Tow type`=="extra"] <- '5'
+          }
           
           # So what do we want to do with the points, first plots the station numbers
           if(point.style == "stn_num") bp2 <- bp + geom_sf_text(data=tmp.sf,aes(label = EID),size=pt.txt.sz) #text(towlst[[i]]$Tows$X,towlst[[i]]$Tows$Y,label=towlst[[i]]$Tows$EID,col='black', cex=0.6)
           # This just plots the points
-          if(point.style == "points")  bp2 <- bp + geom_sf(data=tmp.sf,aes(shape=`Tow type`, fill=`Tow type`),size=pt.txt.sz/2) + scale_shape_manual(values=shapes) + scale_fill_manual(values=cols)
+          if(point.style == "points")  bp2 <- bp + geom_sf(data=tmp.sf,aes(shape=`Tow type`, fill=`Tow type`),size=pt.txt.sz/2, colour="black") + scale_shape_manual(values=shapes) + scale_fill_manual(values=cols)
           # Note regarding point colours. Sometimes points fall on the border between strata so it appears that they are mis-coloured. To check this,
           # run above line WITHOUT bg part to look at where the points fell and to make sure thay they are coloured correctly. It's not 
           # a coding issue, but if it looks like it will be impossible for the tow to occur within a tiny piece of strata, re-run the plots with a diff seed.
@@ -712,7 +719,7 @@ for(fun in funs)
           if(nrow(sb) > 0) bp2 <- bp2 + geom_sf(data=sb,fill=NA)                                                                                                                  
           cap <- paste("Survey stations (n = ",length(tmp.sf$EID),")")
           if(bnk != "Ban") cap <- paste("Fixed stations (n = ",length(tmp.sf$EID),")",sep="")
-          if(bnk == "Ban") cap <- paste("Fixed stations (n = ",length(tmp.sf$Tow),")",sep="")
+          if(bnk == "Ban") cap <- paste("Fixed stations (n = ",length(tmp.sf$Tow)-nrow(extras),")",sep="")
           if(nrow(extras >0 )) cap <- paste(cap," \n Extra stations (n = ",
                                             nrow(extras),")",sep="",collapse =" ")
           #sub.title <- paste("Note: The random seed was set to ",seed,sep="")

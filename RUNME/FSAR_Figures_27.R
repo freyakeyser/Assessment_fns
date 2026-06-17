@@ -53,12 +53,13 @@ library(tidyverse)
 library(TMB)
 library(viridis)
 library(showtext)
+require(ggrepel)
 showtext_auto()
 # Note: with lots of packages, tools sometimes get masked. If something isn't working the way you expect, try explicitly referencing the package (ex: dplyr::[...]) - this happened a lot with dplyr and may occur with other packages. 
 
 # Set up
-language = 'english'
-#language = 'french'
+#language = 'english'
+language = 'french'
 bank <- "GBa"
 banks <- c("GBa") # pick your banks for TACs/Landings table
 fleets <- c("FT", "WF") # pick your fleets for TACs/Landings table
@@ -75,7 +76,8 @@ funs <- c("https://raw.githubusercontent.com/Mar-Scal/Assessment_fns/master/Maps
           "https://raw.githubusercontent.com/Mar-Scal/Assessment_fns/master/Maps/convert_inla_mesh_to_sf.R",
           "https://raw.githubusercontent.com/Mar-Scal/Assessment_fns/master/Maps/French_west_labeller.R",
           "https://raw.githubusercontent.com/Mar-Scal/Assessment_fns/master/Fishery/CPUE_monthly_or_observer.R",
-          "https://raw.githubusercontent.com/Mar-Scal/Assessment_fns/master/Fishery/logs_and_fishery_data.r"
+          "https://raw.githubusercontent.com/Mar-Scal/Assessment_fns/master/Fishery/logs_and_fishery_data.r",
+          "https://raw.githubusercontent.com/Mar-Scal/Assessment_fns/master/Maps/github_spatial_import.R"
 )
 # Now run through a quick loop to load each one, just be sure that your working directory is read/write!
 for(fun in funs) 
@@ -115,6 +117,132 @@ fish.dat$ID<-1:nrow(fish.dat)
 gba.fish.dat <- fish.dat |> collapse::fsubset(bank=="GBa") |> collapse::fgroup_by(year) |> collapse::fsummarise(C = sum(pro.repwt,na.rm=T)/1000)
 
 options(scipen=999)
+
+### MAP
+#############  AN OVERALL PLOT OF THE BANKS AND THAT WILL BE THAT...
+# Also make the overall plot of the banks...
+# set up the labels first
+
+labels <- github_spatial_import(subfolder = "other_boundaries/labels", zipname = "labels.zip")
+offshore <- github_spatial_import(subfolder = "offshore", zipname = "offshore.zip")
+
+labels <- labels[grepl('offshore_detailed',labels$region),]
+
+sfa.labels <- labels[grep(x=labels$lab_short, "SFA"),]
+
+sfa.labels$lab_short <- gsub(x = sfa.labels$lab_short, pattern="A ", replacement="A", fixed=T)
+sfa.labels$lab_short <- gsub(x = sfa.labels$lab_short, pattern=" (", replacement="\n", fixed=T)
+sfa.labels$lab_short <- gsub(x = sfa.labels$lab_short, pattern=")", replacement="", fixed=T)
+sfa.labels$lab_short <- gsub(x = sfa.labels$lab_short, pattern=" Bank", replacement="", fixed=T)
+sfa.labels$lab_short <- gsub(x = sfa.labels$lab_short, pattern="-BAN", replacement="", fixed=T)
+sfa.labels$lab_short <- gsub(x = sfa.labels$lab_short, pattern="north", replacement="North", fixed=T)
+sfa.labels$lab_short <- gsub(x = sfa.labels$lab_short, pattern="south", replacement="South", fixed=T)
+sfa.labels$lab_short[sfa.labels$lab_short=="SFA27A"] <- "SFA27A\nGeorges 'a'"
+sfa.labels$lab_short[sfa.labels$lab_short=="SFA27B"] <- "SFA27B\nGeorges 'b'"
+sfa.labels <- sfa.labels[-grep(pattern = "Includes", x=sfa.labels$lab_short),]
+sfa.labels$lab_short <- gsub(x=sfa.labels$lab_short, pattern="26\nG", replacement="26C\nG", fixed=T)
+sfa.labels$lab_short <- gsub(x=sfa.labels$lab_short, pattern="26\nBrowns North", replacement="26A\nBrowns North", fixed=T)
+sfa.labels$lab_short <- gsub(x=sfa.labels$lab_short, pattern="26\nBrowns South", replacement="26B\nBrowns South", fixed=T)
+sfa.labels$lab_short <- gsub(x=sfa.labels$lab_short, pattern="25\nBa", replacement="25B\nBa", fixed=T)
+sfa.labels$lab_short <- gsub(x=sfa.labels$lab_short, pattern="25\nEa", replacement="25A\nEa", fixed=T)
+
+sfa.labels <- sfa.labels %>%
+  tidyr::separate(lab_short, into=c("SFA", "bank"), sep="\n", remove=F)
+sfa.labels <- sfa.labels[!is.na(sfa.labels$bank),]
+
+sf_use_s2(FALSE)
+joined <- st_join(offshore, sfa.labels)
+
+joined <- joined[!(joined$bank=="Banquereau" & joined$ID.x=="SFA25A"),]
+joined <- joined[!is.na(joined$EID),]
+joined$fr <- joined$lab_short
+joined$fr <- gsub(x=joined$fr, pattern="Browns South", replacement ="Sud de Brown")
+joined$fr <- gsub(x=joined$fr, pattern="Browns North", replacement ="Nord de Brown")
+joined$fr <- gsub(x=joined$fr, pattern="Georges 'a'", replacement ="Georges \u00ABa\u00BB")
+joined$fr <- gsub(x=joined$fr, pattern="Georges 'b'", replacement ="Georges \u00ABb\u00BB")
+joined$fr <- gsub(x=joined$fr, pattern="Eastern Scotian Shelf", replacement ="Est du plateau n\u00E9o-\u00E9cossais")
+joined$fr <- gsub(x=joined$fr, pattern="SFA", replacement ="ZPP")
+
+nonGB <- joined[!joined$SFA %in% c("SFA27A", "SFA27B", "SFA10", "SFA11", "SFA12"),]
+GBalab <- joined[joined$SFA %in% c("SFA27A"),]
+GBblab <- joined[joined$SFA %in% c("SFA27B"),]
+
+showtext_auto(FALSE)
+
+p <-  pecjector(area = list(y = c(40,48),x = c(-68,-54),crs = 4326), add_layer = list(land = 'grey',
+                                                                                      eez = 'eez',
+                                                                                      sfa='offshore',
+                                                                                      bathy=c(100, 'c', 200),  scale.bar = c('br',0.4,-1.35,-1.35)),
+                language = language,
+                c_sys = 4326, quiet=T, plot=F)
+
+if(language=="english") {
+  png(paste0(direct_out, year,"/Updates/", bank, 
+             "/Figures_and_tables/Offshore_banks.png",sep=""),width=11,height=8,res=920,units="in")
+  p <-  p + geom_sf_text(data = nonGB[!(nonGB$SFA%in% c("SFA11", "SFA26B")),], 
+                         aes(label = lab_short), 
+                         fun.geometry = sf::st_centroid) +
+    geom_sf_text(data = nonGB[nonGB$SFA=="SFA11",], 
+                 aes(label = lab_short), 
+                 fun.geometry = sf::st_centroid, 
+                 nudge_x=-0.5, nudge_y=-0.5) +
+    geom_sf_text(data = nonGB[nonGB$SFA=="SFA26B",], 
+                 aes(label = lab_short), 
+                 fun.geometry = sf::st_centroid, 
+                 nudge_y=0.5) +
+    geom_text_repel(data = GBalab, 
+                    aes(x=as.data.frame(st_coordinates(st_centroid(GBalab)))$X,
+                        y=as.data.frame(st_coordinates(st_centroid(GBalab)))$Y,
+                        label = lab_short), 
+                    nudge_x=-1, nudge_y=-0.5, direction = "x", min.segment.length=0, box.padding = 0) +
+    geom_text_repel(data = GBblab, 
+                    aes(x=as.data.frame(st_coordinates(st_centroid(GBblab)))$X,
+                        y=as.data.frame(st_coordinates(st_centroid(GBblab)))$Y,
+                        label = lab_short), 
+                    nudge_x=1.25, nudge_y=-0.5, direction = "x", min.segment.length=0, box.padding = 0) +
+    coord_sf(crs = 4326, default_crs = 4326, xlim = c(-68,-54), ylim = c(40,48), clip = "on", expand = FALSE) +
+    #scale_x_continuous(limits=c(-68, -54)) +
+    #scale_y_continuous(limits=c(40, 48)) + 
+    theme_bw() +
+    xlab(NULL) + ylab(NULL)
+  print(p)
+  dev.off()
+}
+
+if(!language=="english") {
+  png(paste0(direct_out, year,"/Updates/", bank, 
+             "/Figures_and_tables/Offshore_banks_french.png",sep=""),width=11,height=8,res=920,units="in")
+  p <- p + geom_sf_text(data = nonGB[!(nonGB$SFA%in% c("SFA11", "SFA26B")),], 
+                        aes(label = fr), 
+                        fun.geometry = sf::st_centroid) +
+    geom_sf_text(data = nonGB[nonGB$SFA=="SFA11",], 
+                 aes(label = fr), 
+                 fun.geometry = sf::st_centroid, 
+                 nudge_x=-0.5, nudge_y=-0.5) +
+    geom_sf_text(data = nonGB[nonGB$SFA=="SFA26B",], 
+                 aes(label = fr), 
+                 fun.geometry = sf::st_centroid, 
+                 nudge_y=0.5) +
+    geom_text_repel(data = GBalab, 
+                    aes(x=as.data.frame(st_coordinates(st_centroid(GBalab)))$X,
+                        y=as.data.frame(st_coordinates(st_centroid(GBalab)))$Y,
+                        label = fr), 
+                    nudge_x=-1, nudge_y=-0.5, direction = "x", min.segment.length=0, box.padding = 0) +
+    geom_text_repel(data = GBblab, 
+                    aes(x=as.data.frame(st_coordinates(st_centroid(GBblab)))$X,
+                        y=as.data.frame(st_coordinates(st_centroid(GBblab)))$Y,
+                        label = fr), 
+                    nudge_x=1.25, nudge_y=-0.5, direction = "x", min.segment.length=0, box.padding = 0) +
+    coord_sf(crs = 4326, default_crs = 4326, xlim = c(-68,-54), ylim = c(40,48), clip = "on", expand = FALSE) +
+    #scale_x_continuous(limits=c(-68, -54)) +
+    #scale_y_continuous(limits=c(40, 48)) + 
+    theme_bw() +
+    xlab(NULL) + ylab(NULL)
+  print(p)
+  dev.off()
+}
+
+showtext_auto(TRUE)
 
 ### Panel plots
 
@@ -404,7 +532,7 @@ if(language == "english")
 }
 if(language != "english") 
 {
-  y.lab <-"Mortalité naturelle (taux proportionnel)"
+  y.lab <-"Mortalité naturelle\n(taux proportionnel, recrues)"
   ltm.lab <- "MLT"
 }
 
@@ -463,7 +591,7 @@ if(language == "english")
 }
 if(language != "english") 
 {
-  y.lab <-"Mortalité naturelle (taux proportionnel)"
+  y.lab <-"Mortalité naturelle\n(taux proportionnel, pleinement recrutés)"
   ltm.lab <- "MLT"
 }
 

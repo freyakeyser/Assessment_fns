@@ -738,7 +738,7 @@ bbn.mesh.sf.triangles  <- bbn.mesh.sf$triangles
 bbn.mesh.sf.triangles <- data.frame(bbn.mesh.sf.triangles)
 bbn.mesh.sf.triangles$geometry <- bbn.mesh.sf.triangles$geometry*1000
 bbn.mesh.sf.triangles <- st_as_sf(bbn.mesh.sf.triangles)
-st_crs(bbn.mesh.sf.triangles) <- 32620
+st_crs(bbn.mesh.sf.triangles) <- 32619
 bbn.mesh.sf  <- bbn.mesh.sf$vertices
 bbn.mesh.sf$meshID <- 1:nrow(bbn.mesh.sf)
 bbn.mesh.sf <- data.frame(bbn.mesh.sf)
@@ -752,7 +752,7 @@ bbn.B.field$meshID <- 1:nrow(bbn.B.field)
 bbn.B.field <- bbn.B.field %>% tidyr::pivot_longer(!meshID)
 # now let's join these...
 bbn.B.field <- merge(bbn.mesh.sf,bbn.B.field,by="meshID",)
-st_crs(bbn.B.field) <- 32620
+st_crs(bbn.B.field) <- 32619
 bbn.B.field <- st_join(bbn.mesh.sf.triangles,bbn.B.field)
 
 # Now the recruits
@@ -762,7 +762,7 @@ bbn.R.field$meshID <- 1:nrow(bbn.R.field)
 bbn.R.field <- bbn.R.field %>% pivot_longer(!meshID)
 # now let's join these...
 bbn.R.field <- merge(bbn.mesh.sf,bbn.R.field,by="meshID",)
-st_crs(bbn.R.field) <- 32620
+st_crs(bbn.R.field) <- 32619
 bbn.R.field <- st_join(bbn.mesh.sf.triangles,bbn.R.field)
 
 # Finally the natural mortality.
@@ -772,13 +772,13 @@ bbn.m.field$meshID <- 1:nrow(bbn.m.field)
 bbn.m.field <- bbn.m.field %>% pivot_longer(!meshID)
 # now let's join these...
 bbn.m.field <- merge(bbn.mesh.sf,bbn.m.field,by="meshID",)
-st_crs(bbn.m.field) <- 32620
+st_crs(bbn.m.field) <- 32619
 bbn.m.field <- st_join(bbn.mesh.sf.triangles,bbn.m.field)
 
 # Now for the median process error
 bbn.knot.cen <- as.data.frame(bbn.mesh$knots$centers*1000)
 bbn.knot.cen <- st_as_sf(bbn.knot.cen,coords = c("X","Y"))
-st_crs(bbn.knot.cen) <- 32620
+st_crs(bbn.knot.cen) <- 32619
 
 # Now intersect them..., this looks to pull out what we want, but of course I need to get this for every year...
 hmm.bbn <- list()

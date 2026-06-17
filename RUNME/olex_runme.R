@@ -65,9 +65,9 @@ for(i in unique(olex_tracks$Bank)){
 ##### REQUIRED FOR DATABASE LOADING: Import olex data from gz or txt file, and calculate distance coefficient and bearing/
 ##### w setting was determined based on testing results in Supporting_task_code/2022/olex_vs_ov_2022.Rmd
 ##### MUST RUN FOR EACH INDIVIDUAL BANK FOR NOW (unfortunately)
-olex_load <- olex_import(filename="Y:/Offshore/Assessment/Data/Survey_data/2024/Database loading/LE20/GBaGBbtracks_LE20Aug18.gz", 
-                         UTM=32619, type="load", correction_factor = 1.04, earliest="2024-08-01", latest="2024-09-01", 
-                         tow_number_key = "Y:/Offshore/Assessment/Data/Survey_data/2024/Database loading/LE20/LE20trackorder.xlsx")
+olex_load <- olex_import(filename="Y:/Offshore/Assessment/Data/Survey_data/2026/Database loading/LE23/LE23GERtracks_final.gz", 
+                         UTM=32619, type="load", correction_factor = 1.04, earliest="2026-05-01", latest="2026-07-01", 
+                         tow_number_key = "Y:/Offshore/Assessment/Data/Survey_data/2026/Database loading/LE23/LE23trackorder.xlsx")
 
 # UTM 32619 for GBa, GBb, BBn, Ger
 # UTM 32620 for BBs, Sab, Mid

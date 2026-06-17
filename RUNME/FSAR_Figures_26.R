@@ -22,7 +22,7 @@
 # DK split into a 26 and 27, made it an R script instead of an R markdown in summer 2025
 
 ### Set up
-
+require(ggrepel)
 library(boot)
 library(cowplot)
 library(dplyr)
@@ -60,7 +60,8 @@ funs <- c("https://raw.githubusercontent.com/Mar-Scal/Assessment_fns/master/Maps
           "https://raw.githubusercontent.com/Mar-Scal/Assessment_fns/master/Maps/convert_inla_mesh_to_sf.R",
           "https://raw.githubusercontent.com/Mar-Scal/Assessment_fns/master/Maps/French_west_labeller.R",
           "https://raw.githubusercontent.com/Mar-Scal/Assessment_fns/master/Fishery/CPUE_monthly_or_observer.R",
-          "https://raw.githubusercontent.com/Mar-Scal/Assessment_fns/master/Fishery/logs_and_fishery_data.r"
+          "https://raw.githubusercontent.com/Mar-Scal/Assessment_fns/master/Fishery/logs_and_fishery_data.r",
+          "https://raw.githubusercontent.com/Mar-Scal/Assessment_fns/master/Maps/github_spatial_import.R"
           )
 # Now run through a quick loop to load each one, just be sure that your working directory is read/write!
 for(fun in funs) 
@@ -83,8 +84,8 @@ banks <- c("BBn") # pick your banks for TAC/Landings plot
 fleets <- c("FT", "WF") # pick your fleets for TAC/Landings plot
 assess.year <- 2026 # current year - use for database filtering
 alpha<-0.05 # sets the CI's (0.5 is set, and most code uses alpha/2 for 95% CIs)
-#language <- "french"
-language <- "english"
+language <- "french"
+#language <- "english"
 year <- 2026 # current year - used for directories and `r ` calls in text
 yr <- 2025 # fishery year - used for data searching and `r ` calls in text
 years<-1994:yr 
@@ -115,6 +116,7 @@ bbn.psl.total <- round(sum(bbn.psl$pro.repwt,na.rm=T),0)
 pred.grid <-readRDS(paste0(direct_out,"Data/Model/",year,"/BBn/Results/BBn_predict_grid.Rds"))
 #projection<-readRDS("Y:/Offshore/Assessment/Framework/SFA_25_26_2024/Model/Results/BBn/R_75_FR_90/SEAM_1994_2022_qR_0.33_20_knots/Decision_Table/TRP_USR_LRP_RR_g_adj_1_gR_adj_1.Rds")
 projection<-readRDS(paste0(direct_out,"Data/Model/",year,"/BBn/Results/R_75_FR_90/SEAM_1994_2026_qR_0.33_20_knots/Decision_Table/TRP_USR_LRP_2000_RR_g_adj_avg_gR_adj_avg.RDS"))
+
 # B.projection<-comma(round(projection$table[which(projection$table[,1]==TACs$TAC[TACs$year==year & TACs$bank==bank]),3], 0))
 # CH: Fk had it set up that projection and D.tab use the same source file? Changed D.tab to have file with explicit LRP of 2000
 # D.tab<-readRDS(paste0(direct,"Data/Model/",year,"/BBn/Results/R_75_FR_90/SEAM_1994_2025_qR_0.33_20_knots/Decision_Table/TRP_USR_LRP_2000_RR_g_adj_avg_gR_adj_avg.RDS"))
@@ -196,6 +198,130 @@ if(language != "english") ggsave(filename=paste0(direct_out, year,"/Updates/", b
 
 showtext_auto(TRUE)
 
+#############  AN OVERALL PLOT OF THE BANKS AND THAT WILL BE THAT...
+# Also make the overall plot of the banks...
+# set up the labels first
+
+labels <- github_spatial_import(subfolder = "other_boundaries/labels", zipname = "labels.zip")
+offshore <- github_spatial_import(subfolder = "offshore", zipname = "offshore.zip")
+
+labels <- labels[grepl('offshore_detailed',labels$region),]
+
+sfa.labels <- labels[grep(x=labels$lab_short, "SFA"),]
+
+sfa.labels$lab_short <- gsub(x = sfa.labels$lab_short, pattern="A ", replacement="A", fixed=T)
+sfa.labels$lab_short <- gsub(x = sfa.labels$lab_short, pattern=" (", replacement="\n", fixed=T)
+sfa.labels$lab_short <- gsub(x = sfa.labels$lab_short, pattern=")", replacement="", fixed=T)
+sfa.labels$lab_short <- gsub(x = sfa.labels$lab_short, pattern=" Bank", replacement="", fixed=T)
+sfa.labels$lab_short <- gsub(x = sfa.labels$lab_short, pattern="-BAN", replacement="", fixed=T)
+sfa.labels$lab_short <- gsub(x = sfa.labels$lab_short, pattern="north", replacement="North", fixed=T)
+sfa.labels$lab_short <- gsub(x = sfa.labels$lab_short, pattern="south", replacement="South", fixed=T)
+sfa.labels$lab_short[sfa.labels$lab_short=="SFA27A"] <- "SFA27A\nGeorges 'a'"
+sfa.labels$lab_short[sfa.labels$lab_short=="SFA27B"] <- "SFA27B\nGeorges 'b'"
+sfa.labels <- sfa.labels[-grep(pattern = "Includes", x=sfa.labels$lab_short),]
+sfa.labels$lab_short <- gsub(x=sfa.labels$lab_short, pattern="26\nG", replacement="26C\nG", fixed=T)
+sfa.labels$lab_short <- gsub(x=sfa.labels$lab_short, pattern="26\nBrowns North", replacement="26A\nBrowns North", fixed=T)
+sfa.labels$lab_short <- gsub(x=sfa.labels$lab_short, pattern="26\nBrowns South", replacement="26B\nBrowns South", fixed=T)
+sfa.labels$lab_short <- gsub(x=sfa.labels$lab_short, pattern="25\nBa", replacement="25B\nBa", fixed=T)
+sfa.labels$lab_short <- gsub(x=sfa.labels$lab_short, pattern="25\nEa", replacement="25A\nEa", fixed=T)
+
+sfa.labels <- sfa.labels %>%
+  tidyr::separate(lab_short, into=c("SFA", "bank"), sep="\n", remove=F)
+sfa.labels <- sfa.labels[!is.na(sfa.labels$bank),]
+
+sf_use_s2(FALSE)
+joined <- st_join(offshore, sfa.labels)
+
+joined <- joined[!(joined$bank=="Banquereau" & joined$ID.x=="SFA25A"),]
+joined <- joined[!is.na(joined$EID),]
+joined$fr <- joined$lab_short
+joined$fr <- gsub(x=joined$fr, pattern="Browns South", replacement ="Sud de Brown")
+joined$fr <- gsub(x=joined$fr, pattern="Browns North", replacement ="Nord de Brown")
+joined$fr <- gsub(x=joined$fr, pattern="Georges 'a'", replacement ="Georges \u00ABa\u00BB")
+joined$fr <- gsub(x=joined$fr, pattern="Georges 'b'", replacement ="Georges \u00ABb\u00BB")
+joined$fr <- gsub(x=joined$fr, pattern="Eastern Scotian Shelf", replacement ="Est du plateau n\u00E9o-\u00E9cossais")
+joined$fr <- gsub(x=joined$fr, pattern="SFA", replacement ="ZPP")
+
+nonGB <- joined[!joined$SFA %in% c("SFA27A", "SFA27B", "SFA10", "SFA11", "SFA12"),]
+GBalab <- joined[joined$SFA %in% c("SFA27A"),]
+GBblab <- joined[joined$SFA %in% c("SFA27B"),]
+
+showtext_auto(FALSE)
+
+p <-  pecjector(area = list(y = c(40,48),x = c(-68,-54),crs = 4326), add_layer = list(land = 'grey',
+                                              eez = 'eez',
+                                              sfa='offshore',
+                                              bathy=c(100, 'c', 200),  scale.bar = c('br',0.4,-1.35,-1.35)),
+                                              language = language,
+                c_sys = 4326, quiet=T, plot=F)
+
+if(language=="english") {
+  png(paste0(direct_out, year,"/Updates/", bank, 
+             "/Figures_and_tables/Offshore_banks.png",sep=""),width=10,height=7,res=920,units="in")
+  p <-  p + geom_sf_text(data = nonGB[!(nonGB$SFA%in% c("SFA11", "SFA26B")),], 
+                         aes(label = lab_short), 
+                         fun.geometry = sf::st_centroid) +
+    geom_sf_text(data = nonGB[nonGB$SFA=="SFA11",], 
+                 aes(label = lab_short), 
+                 fun.geometry = sf::st_centroid, 
+                 nudge_x=-0.5, nudge_y=-0.5) +
+    geom_sf_text(data = nonGB[nonGB$SFA=="SFA26B",], 
+                 aes(label = lab_short), 
+                 fun.geometry = sf::st_centroid, 
+                 nudge_y=0.5) +
+    geom_text_repel(data = GBalab, 
+                    aes(x=as.data.frame(st_coordinates(st_centroid(GBalab)))$X,
+                        y=as.data.frame(st_coordinates(st_centroid(GBalab)))$Y,
+                        label = lab_short), 
+                    nudge_x=-1, nudge_y=-0.5, direction = "x", min.segment.length=0, box.padding = 0) +
+    geom_text_repel(data = GBblab, 
+                    aes(x=as.data.frame(st_coordinates(st_centroid(GBblab)))$X,
+                        y=as.data.frame(st_coordinates(st_centroid(GBblab)))$Y,
+                        label = lab_short), 
+                    nudge_x=1.25, nudge_y=-0.5, direction = "x", min.segment.length=0, box.padding = 0) +
+    coord_sf(crs = 4326, default_crs = 4326, xlim = c(-68,-54), ylim = c(40,48), clip = "on", expand = FALSE) +
+    #scale_x_continuous(limits=c(-68, -54)) +
+    #scale_y_continuous(limits=c(40, 48)) + 
+    theme_bw() +
+    xlab(NULL) + ylab(NULL)
+  print(p)
+  dev.off()
+}
+
+if(!language=="english") {
+  png(paste0(direct_out, year,"/Updates/", bank, 
+             "/Figures_and_tables/Offshore_banks_french.png",sep=""),width=10,height=7,res=920,units="in")
+  p <- p + geom_sf_text(data = nonGB[!(nonGB$SFA%in% c("SFA11", "SFA26B")),], 
+                        aes(label = fr), 
+                        fun.geometry = sf::st_centroid) +
+    geom_sf_text(data = nonGB[nonGB$SFA=="SFA11",], 
+                 aes(label = fr), 
+                 fun.geometry = sf::st_centroid, 
+                 nudge_x=-0.5, nudge_y=-0.5) +
+    geom_sf_text(data = nonGB[nonGB$SFA=="SFA26B",], 
+                 aes(label = fr), 
+                 fun.geometry = sf::st_centroid, 
+                 nudge_y=0.5) +
+    geom_text_repel(data = GBalab, 
+                    aes(x=as.data.frame(st_coordinates(st_centroid(GBalab)))$X,
+                        y=as.data.frame(st_coordinates(st_centroid(GBalab)))$Y,
+                        label = fr), 
+                    nudge_x=-1, nudge_y=-0.5, direction = "x", min.segment.length=0, box.padding = 0) +
+    geom_text_repel(data = GBblab, 
+                    aes(x=as.data.frame(st_coordinates(st_centroid(GBblab)))$X,
+                        y=as.data.frame(st_coordinates(st_centroid(GBblab)))$Y,
+                        label = fr), 
+                    nudge_x=1.25, nudge_y=-0.5, direction = "x", min.segment.length=0, box.padding = 0) +
+    coord_sf(crs = 4326, default_crs = 4326, xlim = c(-68,-54), ylim = c(40,48), clip = "on", expand = FALSE) +
+    #scale_x_continuous(limits=c(-68, -54)) +
+    #scale_y_continuous(limits=c(40, 48)) + 
+    theme_bw() +
+    xlab(NULL) + ylab(NULL)
+  print(p)
+  dev.off()
+}
+
+showtext_auto(TRUE)
 
 ### Spatial plots
 
@@ -217,7 +343,7 @@ knots1<-rep(1:num.knots,NY)
 
 grid.gis <- pred.grid$grid
 grid.gis$geometry <- grid.gis$geometry*1000
-st_crs(grid.gis) <- 32620
+st_crs(grid.gis) <- 32619
 # Now simplify the grid for the spatial plots...
 knot.gis <- aggregate(grid.gis, list(grid.gis$knotID), function(x) x[1])
 
@@ -261,16 +387,15 @@ b.lab <- signif(exp(b.brk),digits=2)
 # spatial.B.plot<- ggplot() + geom_sf(data=B.dat.plot%>% dplyr::filter(!Year %in% c(2023)),aes(fill=log(B)),color='grey')+
 spatial.B.plot<- ggplot() + geom_sf(data=B.dat.plot%>% dplyr::filter(Year %in% c((yr-3):yr)),aes(fill=log(B)),color='grey')+
   facet_wrap(~Year)+ 
-  scale_x_continuous(breaks = c(-60.3,-60.1,-59.9) )+#, labels = c("60\u00b018'W","60\u00b06'W","59\u00b054'W")) +
-  scale_y_continuous(breaks = c(42.6, 42.75, 42.9) )+#,labels = c("42\u00b036'N","42\u00b045'N","42\u00b054'N")) +
+ scale_x_continuous(breaks = c(-66.3, -66.1, -65.9) )+#, labels = c("60\u00b018'W","60\u00b06'W","59\u00b054'W")) +
+ scale_y_continuous(breaks = c(42.55, 42.7, 42.85) )+#,labels = c("42\u00b036'N","42\u00b045'N","42\u00b054'N")) +
   scale_fill_viridis_c(breaks = b.brk, labels=b.lab, name=leg.label,option = "A",begin=0.2) 
   #+# superscript minus U207B has been phased out, use U02C9 instead
   #theme(axis.text.x=element_text(angle=45,hjust=1))
 # Save for higher quality image
 showtext_auto(FALSE)
 if(language != 'english') spatial.B.plot <- spatial.B.plot + 
-                                            scale_x_continuous(name = "", breaks = seq(-61.3, -59.3, 0.2),labels = french.west)
-
+                                            scale_x_continuous(name = "", breaks = c(-66.3, -66.1, -65.9),labels = french.west)
 
 if(language == 'english') ggsave(filename=paste0(direct_out, year,"/Updates/", bank, 
                                                  "/Figures_and_tables/spatial.Biomass.FullyRecruited.png"), 
@@ -278,7 +403,7 @@ if(language == 'english') ggsave(filename=paste0(direct_out, year,"/Updates/", b
 
 if(language != 'english') ggsave(filename=paste0(direct_out, year,"/Updates/", bank, 
                                                  "/Figures_and_tables/spatial.Biomass.FullyRecruited_french.png"), 
-                                 spatial.B.plot, dpi = 600, width = 6.5, height = 3.5)
+                                 spatial.B.plot, dpi = 600, width = 7, height = 4)
 
 
 showtext_auto(TRUE)
@@ -299,13 +424,13 @@ if(language != 'english') leg.label <- "Densité des \n recrues \n(kg\U2022km\U0
 theme_set(theme_few(base_size = 11))
 spatial.R.plot<-  ggplot() + geom_sf(data=R.dat.plot %>% dplyr::filter(Year %in% c((yr-3):yr)),aes(fill=log(R)),col='grey')+
   facet_wrap(~Year)+ 
-  scale_x_continuous(breaks = c(-60.3,-60.1,-59.9) )+#, labels = c("60\u00b018'W","60\u00b06'W","59\u00b054'W")) +
-  scale_y_continuous(breaks = c(42.6, 42.75, 42.9) )+#,labels = c("42\u00b036'N","42\u00b045'N","42\u00b054'N")) +
+  scale_x_continuous(breaks = c(-66.3, -66.1, -65.9) )+#, labels = c("60\u00b018'W","60\u00b06'W","59\u00b054'W")) +
+  scale_y_continuous(breaks = c(42.55, 42.7, 42.85) )+#,labels = c("42\u00b036'N","42\u00b045'N","42\u00b054'N")) +
   scale_fill_viridis_c(breaks=r.brk, labels=r.lab, name=leg.label, end=0.8) #+ # superscript minus U207B has been phased out, use U02C9 instead 
   #theme(axis.text.x=element_text(angle=45,hjust=1))
 
 if(language != 'english') spatial.R.plot <- spatial.R.plot + 
-                                            scale_x_continuous(name = "", breaks = seq(-61.3, -59.3, 0.2),labels = french.west)
+                                            scale_x_continuous(name = "", breaks = c(-66.3, -66.1, -65.9),labels = french.west)
 
 
 # Save for higher quality image
@@ -347,15 +472,15 @@ if(language != 'english') leg.label <- "Mortalité \nnaturelle \n(proportionnell
 
 # spatial.m.plot <-  ggplot() + geom_sf(data=m.dat.plot %>% dplyr::filter(!Year %in% c(2023)),aes(fill=log(m)),color='grey')+
 spatial.mu.plot <-  ggplot() + geom_sf(data=mu.dat.plot %>% dplyr::filter(Year %in% c((yr-3):yr)),aes(fill=log(mu)),color='grey')+
-  scale_x_continuous(breaks = c(-60.3,-60.1,-59.9) )+#, labels = c("60\u00b018'W","60\u00b06'W","59\u00b054'W")) +
-  scale_y_continuous(breaks = c(42.6, 42.75, 42.9) )+#,labels = c("42\u00b036'N","42\u00b045'N","42\u00b054'N")) +
+  scale_x_continuous(breaks = c(-66.3, -66.1, -65.9) )+#, labels = c("60\u00b018'W","60\u00b06'W","59\u00b054'W")) +
+  scale_y_continuous(breaks = c(42.55, 42.7, 42.85) )+#,labels = c("42\u00b036'N","42\u00b045'N","42\u00b054'N")) +
   facet_wrap(~Year)+ 
   scale_fill_viridis_c(breaks = mu.brk, labels = mu.lab,name=leg.label,option = "B",direction =1,begin = 0.2,end=1) 
 # Save for higher quality image
 showtext_auto(FALSE)
 
 if(language != 'english') spatial.mu.plot <- spatial.mu.plot + 
-  scale_x_continuous(name = "", breaks = seq(-61.3, -59.3, 0.2),labels = french.west)
+  scale_x_continuous(name = "", breaks = c(-66.3, -66.1, -65.9),labels = french.west)
 
 
 
@@ -372,8 +497,8 @@ showtext_auto(TRUE)
 
 ####### q - catchability ############################################
 spatial.q.plot <- ggplot() + geom_sf(data=q.dat.plot,aes(fill=qI),col=NA)+
-  scale_x_continuous(breaks = c(-60.3,-60.1,-59.9) )+#, labels = c("60\u00b018'W","60\u00b06'W","59\u00b054'W")) +
-  scale_y_continuous(breaks = c(42.6, 42.75, 42.9) )+#,labels = c("42\u00b036'N","42\u00b045'N","42\u00b054'N")) +
+  scale_x_continuous(breaks = c(-66.3, -66.1, -65.9) )+#, labels = c("60\u00b018'W","60\u00b06'W","59\u00b054'W")) +
+  scale_y_continuous(breaks = c(42.55, 42.7, 42.85) )+#,labels = c("42\u00b036'N","42\u00b045'N","42\u00b054'N")) +
   scale_fill_viridis_c(name="Predicted catchability (qI)",option = "C",begin = 0.2,end =0.8) 
 
 # Save for higher quality image
@@ -396,13 +521,13 @@ e.lab <- signif(exp(e.brk),digits=2)
 # spatial.exploit.plot<- ggplot() + geom_sf(data=F.dat.plot,aes(fill=log(exp.na)),color='grey') +
 #spatial.exploit.plot<- ggplot() + geom_sf(data=F.dat.plot %>% dplyr::filter(Year %in% c((yr-4):(yr-1))),aes(fill=log(exp.na)),color='grey') +
 spatial.exploit.plot<- ggplot() + geom_sf(data=F.dat.plot %>% dplyr::filter(Year %in% c((yr-4):yr)),aes(fill=log(exp.na)),color='grey') +
-  scale_x_continuous(breaks = c(-60.3,-60.1,-59.9) )+#, labels = c("60\u00b018'W","60\u00b06'W","59\u00b054'W")) +
-  scale_y_continuous(breaks = c(42.6, 42.75, 42.9) )+#,labels = c("42\u00b036'N","42\u00b045'N","42\u00b054'N")) +
+  scale_x_continuous(breaks = c(-66.3, -66.1, -65.9) )+#, labels = c("60\u00b018'W","60\u00b06'W","59\u00b054'W")) +
+  scale_y_continuous(breaks = c(42.55, 42.7, 42.85) )+#,labels = c("42\u00b036'N","42\u00b045'N","42\u00b054'N")) +
   facet_wrap(~Year) + 
   scale_fill_viridis_c(breaks = e.brk,labels = e.lab,name=leg.label,option = "D") 
 
 if(language != 'english') spatial.exploit.plot <- spatial.exploit.plot + 
-                                            scale_x_continuous(name = "", breaks = seq(-61.3, -59.3, 0.2),labels = french.west)
+                                            scale_x_continuous(name = "", breaks =  c(-66.3, -66.1, -65.9),labels = french.west)
 
 
 # Save for higher quality image
@@ -729,8 +854,6 @@ showtext_auto(FALSE)
 if(language == "english") ggsave(filename=paste0(direct_out, year,"/Updates/", bank, "/Figures_and_tables/FSAR_panel1_tacland_biom_recruitb_exploit.png"), panel_1, dpi = 600, width = 9, height = 9)
 
 if(language == "english") ggsave(filename=paste0(direct_out, year,"/Updates/", bank, "/Figures_and_tables/FSAR_panel1_tacland_biom_recruitb_exploit_wider.png"), panel_1, dpi = 600, width = 9, height = 7)
-
-
 
 if(language != "english") ggsave(filename=paste0(direct_out, year,"/Updates/", bank, "/Figures_and_tables/FSAR_panel1_tacland_biom_recruitb_exploit_french.png"), panel_1, dpi = 600, width = 9, height = 9)
 
