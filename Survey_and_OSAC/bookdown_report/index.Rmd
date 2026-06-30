@@ -19,7 +19,8 @@ header-includes:
 require(lubridate)
 load("summary.Rdata")
 
-dates <- summary_data$dates[summary_data$dates$bank %in% c("Mid", "Sab", "Ger", "BBs",
+dates <- summary_data$dates[summary_data$dates$bank %in% c(#"Mid", "Sab", 
+  "Ger", #"BBs",
           "BBn", "GB"),]
 ```
 

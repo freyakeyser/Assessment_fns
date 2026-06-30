@@ -1623,8 +1623,6 @@ for(fun in funs)
               if(length(grep("bm",maps.to.make[m])) >0) leg.title <- B.tow.lab # If it is biomass then the legend needs the biomass title.
             } #end if(maps.to.make[m]  %in% bin.names) 
             
-            
-            
             # Don't add the titles?
             if(add.title == T)  p <- p + ggtitle(fig.title) + theme(plot.title = element_text(face = "bold",size=20, hjust=0.5))
             
@@ -1725,6 +1723,10 @@ for(fun in funs)
               if(banks[i] != 'Ger') surv$`Tow type`[surv$random != 1] <- paste0('exploratory (n = ',length(surv$random[surv$random!=1]),")")
               if(banks[i] == 'Ger') surv$`Tow type`[!surv$random %in% c(1,3)] <- paste0('exploratory (n = ',length(surv$random[!surv$random %in% c(1,3)]),")")
               if(banks[i] == 'Ger') surv$`Tow type`[surv$random == 3] <- paste0('repeated (n = ',length(surv$random[surv$random==3]),")")
+              if(banks[i] == 'GB') {
+                surv$`Tow type`[surv$random == 3] <- paste0('regular (n = ',length(surv$random[surv$random==3]),")")
+                surv$`Tow type`[surv$random == 2] <- paste0('exploratory (n = ',length(surv$random[surv$random==2]),")")
+              }
               # Get the shapes for symbols we want, this should do what we want for all cases we've ever experienced...
               if(length(unique(surv$`Tow type`)) ==1) shp <- 21
               if(length(unique(surv$`Tow type`)) ==2) shp <- c(17,21)
@@ -1844,11 +1846,14 @@ for(fun in funs)
         dplyr::filter(year == yr & state == 'live')
       surv <- st_transform(surv,crs = st_crs(loc.sf)$epsg)
       surv$`Tow type` <- paste0('regular (n = ',length(surv$random[surv$random==1]),")")
-     
+      
       if(banks[i] != 'Ger') surv$`Tow type`[surv$random != 1] <- paste0('exploratory (n = ',length(surv$random[surv$random!=1]),")")
       if(banks[i] == 'Ger') surv$`Tow type`[!surv$random %in% c(1,3)] <- paste0('exploratory (n = ',length(surv$random[!surv$random %in% c(1,3)]),")")
       if(banks[i] == 'Ger') surv$`Tow type`[surv$random == 3] <- paste0('repeated (n = ',length(surv$random[surv$random==3]),")")
-      if(banks[i] == 'GB') surv$`Tow type`[surv$random == 3] <- paste0('regular (n = ',length(surv$random[surv$random==3]),")")
+      if(banks[i] == 'GB') {
+        surv$`Tow type`[surv$random == 3] <- paste0('regular (n = ',length(surv$random[surv$random==3]),")")
+        surv$`Tow type`[surv$random == 2] <- paste0('exploratory (n = ',length(surv$random[surv$random==2]),")")
+      }
       # Get the shapes for symbols we want, this should do what we want for all cases we've ever experienced...
       if(length(unique(surv$`Tow type`)) ==1) shp <- 16; ptcol <- c("black")
       if(!banks[i] == "Ger" & length(unique(surv$`Tow type`)) ==2) shp <- c(24,16); ptcol <- c("transparent", "black")

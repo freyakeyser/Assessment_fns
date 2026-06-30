@@ -41,27 +41,11 @@ olex_sf <- olex_import(filename="Y:/Offshore/Assessment/Data/Survey_data/2024/Da
 
 ### OPTIONAL: Extract the tow tracks for sharing in txt file or CSV file. Use last bank of survey, and run multiple times if 
 ### multiple UTMs in the survey (e.g. spring, run twice, and delete inappropriate files)
-olex_tracks_ger <- olex_import(filename="Y:/Offshore/Assessment/Data/Survey_data/2026/Database loading/LE23/LE23GERtracks_final.gz", 
+### run this using the last bank's GZ file so that all tracks are in one gz file (or run twice if there are multiple UTMs) 
+olex_tracks <- olex_import(filename="Y:/Offshore/Assessment/Data/Survey_data/2026/Database loading/LE23/LE23GERtracks_final.gz", 
                            UTM = 32619, earliest="2026-05-01", latest="2026-07-01", type="tracks",
                            #edited_csv="C:/users/keyserf/Desktop/csv_to_edit - Copy.csv",
                            tow_number_key = "Y:/Offshore/Assessment/Data/Survey_data/2026/Database loading/LE23/LE23trackorder.xlsx")
-
-olex_tracks_bbn <- olex_import(filename="Y:/Offshore/Assessment/Data/Survey_data/2026/Database loading/LE23/LE23BBNtracks.gz", 
-                           UTM = 32619, earliest="2026-05-01", latest="2026-07-01", type="tracks",
-                           #edited_csv="C:/users/keyserf/Desktop/csv_to_edit - Copy.csv",
-                           tow_number_key = "Y:/Offshore/Assessment/Data/Survey_data/2026/Database loading/LE23/LE23trackorder.xlsx")
-
-olex_tracks_gb <- olex_import(filename="Y:/Offshore/Assessment/Data/Survey_data/2026/Database loading/LE23/LE23GBMontracks.gz", 
-                           UTM = 32619, earliest="2026-05-01", latest="2026-07-01", type="tracks",
-                           #edited_csv="C:/users/keyserf/Desktop/csv_to_edit - Copy.csv",
-                           tow_number_key = "Y:/Offshore/Assessment/Data/Survey_data/2026/Database loading/LE23/LE23trackorder.xlsx")
-
-olex_tracks <- rbind(olex_tracks_ger, olex_tracks_bbn)
-olex_tracks <- rbind(olex_tracks, olex_tracks_gb)
-
-table(olex_tracks$bank, olex_tracks$Bank)
-table(olex_tracks$bank, olex_tracks$official_tow_number)
-
 
 # for industryreport
 for(i in unique(olex_tracks$Bank)){
@@ -69,14 +53,15 @@ for(i in unique(olex_tracks$Bank)){
   year <- unique(lubridate::year(write$Date_time))
   write$Year <- year
   write <- dplyr::select(write, -Date_time)
-  if(i == "SFA25A.shp") write$Bank <- "SabMid"
-  if(i == "SFA25B.shp") write$Bank <- "Ban"
+  #if(i == "SFA25A.shp") write$Bank <- "SabMid"
+  #if(i == "SFA25B.shp") write$Bank <- "Ban"
   if(i == "SFA26A.shp") write$Bank <- "BBn"
-  if(i == "SFA26B.shp") write$Bank <- "BBs"
+  #if(i == "SFA26B.shp") write$Bank <- "BBs"
   if(i == "SFA26C.shp") write$Bank <- "Ger"
   if(i == "SFA27A.shp") write$Bank <- "GBa"
   if(i == "SFA27B.shp") write$Bank <- "GBb"
-  write.csv(write, paste0("Y:/Offshore/Assessment/Data/Survey_data/2026/Industry Reports/", unique(write$Bank), "_olex_tracks_", year, ".csv"))
+  print(summary(write))
+  #write.csv(write, paste0("Y:/Offshore/Assessment/Data/Survey_data/2026/Industry Reports/", unique(write$Bank), "_olex_tracks_", year, ".csv"))
 }
 
 ##### REQUIRED FOR DATABASE LOADING: Import olex data from gz or txt file, and calculate distance coefficient and bearing/

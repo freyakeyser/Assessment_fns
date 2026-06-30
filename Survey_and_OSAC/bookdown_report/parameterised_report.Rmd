@@ -24,9 +24,9 @@ require(tidyverse)
 options(tinytex.verbose = TRUE)
 
 
-year <- 2025
+year <- 2026
 
-load("summary2.Rdata")
+load("summary.Rdata")
 source(paste0(direct_fns, "/Other_functions/ScallopRound.R"))
 
 ntows <- summary_data$ntows
