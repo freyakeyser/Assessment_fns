@@ -1740,8 +1740,8 @@ for(fun in funs)
             
             if(maps.to.make[m] %in% c("MW.GP-spatial","MW-spatial","CF-spatial","MC-spatial"))
             {
-              detailed_tows <- unique(mw[[banks[i]]][mw[[banks[i]]]$year==yr,]$tow)
-              surv <- st_as_sf(CF.current[[banks[i]]][CF.current[[banks[i]]]$tow %in% detailed_tows,],coords = c('lon','lat'),crs = 4326)
+              #detailed_tows <- unique(mw[[banks[i]]][mw[[banks[i]]]$year==yr,]$tow)
+              surv <- st_as_sf(unique(mw[[banks[i]]][mw[[banks[i]]]$year==yr,c("lon", "lat")]),coords = c('lon','lat'),crs = 4326)
               surv <- st_transform(surv,crs = st_crs(loc.sf)$epsg)
               surv$`Tow type` <- paste0('detailed (n = ',nrow(surv),")")
               p3 <- p2 + geom_sf(data=surv,aes(shape=`Tow type`),size=2) + scale_shape_manual(values = 21) + coord_sf(expand=F) +
@@ -1839,7 +1839,7 @@ for(fun in funs)
           mutate(ID = 1:length(ID)) %>%
           filter(ID==1)
       }
-      
+browser()
       if(!banks[i] == "GB") shpf <- st_transform(shpf,crs = st_crs(loc.sf)$epsg)
       
       surv <- st_as_sf(surv.Live[[banks[i]]],coords = c('slon','slat'),crs = 4326,remove=F) %>% 
