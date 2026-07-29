@@ -805,7 +805,7 @@ for(fun in funs)
               st_transform(32619)
             xmin_ger <- data.frame(x=rep(as.numeric(st_bbox(bound.poly.surv.sf)$xmin),2), 
                                    y=c(as.numeric(st_bbox(shpf_map)$ymin), as.numeric(st_bbox(shpf_map)$ymax)))
-            xmin_ger <- st_as_sf(xmin_ger, coords=c("x", "y"), crs=32619) %>% group_by(1) %>% summarize(do_union=F) %>% st_cast("MULTILINESTRING")
+            xmin_ger <- st_as_sf(xmin_ger, coords=c("x", "y"), crs=32619) %>% group_by(1) %>% dplyr::summarize(do_union=F) %>% st_cast("MULTILINESTRING")
             shpf_map <- lwgeom::st_split(shpf_map, xmin_ger) %>% 
               st_collection_extract("POLYGON") %>%
               mutate(ID = 1:length(ID)) %>%
@@ -1343,7 +1343,6 @@ for(fun in funs)
                file = paste(direct,"Data/Survey_data/", yr, "/Survey_summary_output/",banks[i],"/", banks[i],"_figures_res_",s.res[1],"-",s.res[2], ".RData",sep=""))
         } # end if(save.INLA ==T) 
         
-        
         #######################  FIGURES#######################  FIGURES#######################  FIGURES#######################  FIGURES ##################
         #######################  FIGURES#######################  FIGURES#######################  FIGURES#######################  FIGURES ##################
         # And if the results already exist we can instead just load them, return a warning message if the file we want doesn't exist yet and stop the function
@@ -1651,7 +1650,7 @@ for(fun in funs)
             #   load(paste0(direct,"Data/Survey_data/",yr,"/Survey_summary_output/",banks[i],"/",maps.to.make[m],".Rdata"))
             # }
             #
-            #browser()
+            browser()
             # Here we add our layer to the object above.  This is going to become a list so we can save it and modify it outside Figures.
             if(!is.null(mod.res[[maps.to.make[m]]])){
               if(banks[i] %in% c("GBa", "GBb")) {
@@ -1716,7 +1715,7 @@ for(fun in funs)
      
             if(maps.to.make[m] %in% c("PR-spatial", "Rec-spatial", "FR-spatial",bin.names, "SH-spatial", "SH.GP-spatial","Clap-spatial", "Clap-abund-spatial"))
             {
-             surv <- st_as_sf(surv.Live[[banks[i]]],coords = c('slon','slat'),crs = 4326,remove=F) %>% 
+             surv <- st_as_sf(surv.Live[[banks[i]]],coords = c('lon','lat'),crs = 4326,remove=F) %>% 
                 dplyr::filter(year == yr & state == 'live')
               surv <- st_transform(surv,crs = st_crs(loc.sf)$epsg)
               surv$`Tow type` <- paste0('regular (n = ',length(surv$random[surv$random==1]),")")
@@ -1833,16 +1832,16 @@ for(fun in funs)
           st_transform(32619)
         xmin_ger <- data.frame(x=rep(as.numeric(st_bbox(shpf)$xmin),2), 
                                y=c(as.numeric(st_bbox(shpf_map)$ymin), as.numeric(st_bbox(shpf_map)$ymax)))
-        xmin_ger <- st_as_sf(xmin_ger, coords=c("x", "y"), crs=32619) %>% group_by(1) %>% summarize(do_union=F) %>% st_cast("MULTILINESTRING")
+        xmin_ger <- st_as_sf(xmin_ger, coords=c("x", "y"), crs=32619) %>% group_by(1) %>% dplyr::summarize(do_union=F) %>% st_cast("MULTILINESTRING")
         shpf_map <- lwgeom::st_split(shpf_map, xmin_ger) %>% 
-          st_collection_extract("POLYGON") %>%
-          mutate(ID = 1:length(ID)) %>%
-          filter(ID==1)
+           st_collection_extract("POLYGON") %>%
+           mutate(ID = 1:length(ID)) %>%
+           filter(ID==1)
       }
-browser()
+
       if(!banks[i] == "GB") shpf <- st_transform(shpf,crs = st_crs(loc.sf)$epsg)
       
-      surv <- st_as_sf(surv.Live[[banks[i]]],coords = c('slon','slat'),crs = 4326,remove=F) %>% 
+      surv <- st_as_sf(surv.Live[[banks[i]]],coords = c('lon','lat'),crs = 4326,remove=F) %>% 
         dplyr::filter(year == yr & state == 'live')
       surv <- st_transform(surv,crs = st_crs(loc.sf)$epsg)
       surv$`Tow type` <- paste0('regular (n = ',length(surv$random[surv$random==1]),")")
