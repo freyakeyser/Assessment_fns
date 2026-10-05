@@ -21,9 +21,9 @@ options(tinytex.verbose = TRUE)
 knitr::opts_chunk$set(echo = TRUE, fig.cap = TRUE)
 library(officedown)
 
-year <- 2025
+year <- 2026
 
-load("summary4.Rdata")
+load("C:/Users/keyserf/Documents/Github/Assessment_fns/Survey_and_OSAC/bookdown_report/summary4.Rdata")
 source(paste0(direct_fns, "/Other_functions/ScallopRound.R"))
 
 ntows <- summary_data$ntows

@@ -156,7 +156,7 @@ survey.figs <- function(plots = 'all', banks = "all" , yr = as.numeric(format(Sy
   options(scipen = 999,stringsAsFactors = F)
   tmp.dir <- direct ; tmp.season <- season; tmp.yr <- yr # I need this so that the directory isn't overwritten when I load the below...
   require(viridis) || stop("Install the viridis package for the color ramps")
-  require(INLA) || stop("Install the INLA package for the spatial plots")
+  #require(INLA) || stop("Install the INLA package for the spatial plots")
   require(maps)|| stop("Install the maps package for the spatial plots")
   #require(maptools)|| stop("Install the maptools package for the spatial plots")
   require(mapdata)|| stop("Install the mapdata package for the spatial plots")
@@ -241,7 +241,7 @@ survey.figs <- function(plots = 'all', banks = "all" , yr = as.numeric(format(Sy
     if(any(plots %in% "MW-SH") && any(banks %in% "GBa"))
     {
       # This loads last years Survey object results.
-      load(paste(direct,"Data/Survey_data/",yr,"/Survey_summary_output/testing_results_spring2024.Rdata",sep=""))  
+      load(paste(direct,"Data/Survey_data/",yr,"/Survey_summary_output/testing_results_spring2026.Rdata",sep=""))  
       if(dim(survey.obj$GB$model.dat[survey.obj$GB$model.dat$year==yr,])[1]==0) message("Edit line 199 to pull in the spring survey summary object for the GB MWSH plot.")
       survey.obj.last <- survey.obj
     } # end if(any(plots %in% "MW-SH") & any(banks %in% "GBa"))
@@ -801,21 +801,21 @@ for(fun in funs)
                                        offset = c(5, 5)) # inner and outer border widths)
           }
           if(banks[i] %in% c("Ger")) {
-            shpf_map <- st_read(paste0(gis.repo, "/Offshore/SFA26C.shp")) %>%
-              st_transform(32619)
-            xmin_ger <- data.frame(x=rep(as.numeric(st_bbox(bound.poly.surv.sf)$xmin),2), 
-                                   y=c(as.numeric(st_bbox(shpf_map)$ymin), as.numeric(st_bbox(shpf_map)$ymax)))
-            xmin_ger <- st_as_sf(xmin_ger, coords=c("x", "y"), crs=32619) %>% group_by(1) %>% dplyr::summarize(do_union=F) %>% st_cast("MULTILINESTRING")
-            shpf_map <- lwgeom::st_split(shpf_map, xmin_ger) %>% 
-              st_collection_extract("POLYGON") %>%
-              mutate(ID = 1:length(ID)) %>%
-              filter(ID==1)
+              shpf_map <- st_read(paste0(gis.repo, "/survey_boundaries/Ger_east.shp")) %>%
+                st_transform(32619)
+              xmin_ger <- data.frame(x=rep(as.numeric(st_bbox(shpf_map)$xmin),2), 
+                                     y=c(as.numeric(st_bbox(shpf_map)$ymin), as.numeric(st_bbox(shpf_map)$ymax)))
+              xmin_ger <- st_as_sf(xmin_ger, coords=c("x", "y"), crs=32619) %>% group_by(1) %>% dplyr::summarize(do_union=F) %>% st_cast("MULTILINESTRING")
+              shpf_map <- lwgeom::st_split(shpf_map, xmin_ger) %>% 
+                st_collection_extract("POLYGON") %>%
+                mutate(ID = 1:length(ID)) %>%
+                filter(ID==1)
             bound.poly.surv.sf <- shpf_map
             st_geometry(shpf_map) <- st_geometry(shpf_map)/1000
             mesh <- sdmTMB::make_mesh(data = as.data.frame(st_coordinates(loc.sf))/1000, 
                                      xy_cols = c("X", "Y"), 
                                      fmesher_func = fmesher::fm_mesh_2d_inla,
-                                     boundary = inla.sp2segment(shpf_map),
+                                     boundary = fmesher::fm_as_segm(shpf_map),
                                      cutoff = 0.5, # minimum triangle edge length
                                      max.edge = c(5, 5), # inner and outer max triangle lengths
                                      offset = c(5, 5)) # inner and outer border widths)
@@ -826,7 +826,7 @@ for(fun in funs)
             mesh <- sdmTMB::make_mesh(data = as.data.frame(st_coordinates(loc.sf))/1000, 
                                       xy_cols = c("X", "Y"), 
                                       fmesher_func = fmesher::fm_mesh_2d_inla,
-                                      boundary = inla.sp2segment(bound),
+                                      boundary = fmesher::fm_as_segm(bound),
                                       cutoff = 0.5, # minimum triangle edge length
                                       max.edge = c(5, 5), # inner and outer max triangle lengths
                                       offset = c(5, 5)) # inner and outer border widths)
@@ -837,19 +837,19 @@ for(fun in funs)
             mesh <- sdmTMB::make_mesh(data = as.data.frame(st_coordinates(loc.sf))/1000, 
                                        xy_cols = c("X", "Y"), 
                                        fmesher_func = fmesher::fm_mesh_2d_inla,
-                                       boundary = inla.sp2segment(bound),
+                                       boundary = fmesher::fm_as_segm(bound),
                                        cutoff = 0.5, # minimum triangle edge length
                                        max.edge = c(5, 5), # inner and outer max triangle lengths
                                        offset = c(5, 5)) # inner and outer border widths)
           }
           #mesh <- mesh2$mesh
           # # Will this work for them all I wonder? Max edge should be around 1/5 of the range according to Zuur
-          # mesh <- inla.mesh.2d(loc, boundary= inla.sp2segment(bound.poly.surv.sp), max.edge=c(1,5)*max.edge, cutoff=max.edge)
+          # mesh <- inla.mesh.2d(loc, boundary= fmesher::fm_as_segm(bound.poly.surv.sp), max.edge=c(1,5)*max.edge, cutoff=max.edge)
           # if(banks[i] %in% c("GBa","GBb","BBn","GB","Ger")) mesh$crs <- raster::crs(st_crs(32619)[[2]])
           # if(banks[i] %in% c("Mid","Sab","BBs")) mesh$crs <- raster::crs(st_crs(32620)[[2]])
           # if(banks[i] %in% c("Ban","BanIce","SPB")) mesh$crs <- raster::crs(st_crs(32621)[[2]])
           plot(mesh) # For testing I want to plot this to see it and ensure it isn't crazy for the moment...
-          #if(!banks[i] %in% c("GB", "Ban", "BanIce", "Sab")) mesh <- inla.mesh.2d(loc, boundary= inla.sp2segment(bound.poly.surv.sp), max.edge=c(1,5)*max.edge, cutoff=max.edge/1.5)
+          #if(!banks[i] %in% c("GB", "Ban", "BanIce", "Sab")) mesh <- inla.mesh.2d(loc, boundary= fmesher::fm_as_segm(bound.poly.surv.sp), max.edge=c(1,5)*max.edge, cutoff=max.edge/1.5)
           #if(banks[i] == "GB") mesh <- inla.mesh.2d(loc, boundary=bound.buff, max.edge=c(0.04))
           #if(banks[i] == "Sab") mesh <- inla.mesh.2d(loc, boundary=bound.buff, max.edge=c(0.05))
           #if(banks[i] %in% c("Ban", "BanIce")) mesh <- inla.mesh.2d(loc, boundary=bound.buff, max.edge=c(0.075))
@@ -1010,9 +1010,31 @@ for(fun in funs)
                   
                   sane <- sanity( fitted[[spatial.maps[k]]])
                   if(sum(unlist(sane))<7 & (sane$hessian_ok ==F | sane$eigen_values_ok==F)) {
-                    stop(paste0("sanity check failed for all three families attempted (", spatial.maps[k], "-", banks[i],"). I did my best, so now it's time to ask Dave."))}
+                    
+                    # Try a diff mesh
+                    if(banks[i] == "GB" & yr==2026) {
+                      mesh2 <- sdmTMB::make_mesh(data = as.data.frame(st_coordinates(loc.sf))/1000, 
+                                                xy_cols = c("X", "Y"), 
+                                                fmesher_func = fmesher::fm_mesh_2d_inla,
+                                                boundary = fmesher::fm_as_segm(bound),
+                                                cutoff = 1.5, # minimum triangle edge length
+                                                max.edge = c(5, 5), # inner and outer max triangle lengths
+                                                offset = c(5, 5)) # inner and outer border widths)
+                      
+                      fitted[[spatial.maps[k]]] <- sdmTMB(
+                        out ~ 1, 
+                        data = tmp.cf,
+                        family = gaussian(),
+                        mesh = mesh2,
+                        spatial = "on")
+                      
+                      sane <- sanity( fitted[[spatial.maps[k]]])
+                      if(sum(unlist(sane))<7 & (sane$hessian_ok ==F | sane$eigen_values_ok==F)) {
+                        stop(paste0("sanity check failed for all three families attempted (", spatial.maps[k], "-", banks[i],"). I did my best, so now it's time to ask Dave."))}
+                    }
+                    
+                  }
                 }
-                
                 # # This is the stack for the INLA model
                 # stk <- inla.stack(tag="est",data=list(y = tmp.cf$CF, link=1L),
                 #                   effects=list(a0 = rep(1, nrow(tmp.cf)), s = 1:spde$n.spde),
@@ -1650,7 +1672,7 @@ for(fun in funs)
             #   load(paste0(direct,"Data/Survey_data/",yr,"/Survey_summary_output/",banks[i],"/",maps.to.make[m],".Rdata"))
             # }
             #
-            browser()
+            
             # Here we add our layer to the object above.  This is going to become a list so we can save it and modify it outside Figures.
             if(!is.null(mod.res[[maps.to.make[m]]])){
               if(banks[i] %in% c("GBa", "GBb")) {
@@ -1713,7 +1735,8 @@ for(fun in funs)
             ############  Add the points and the legend to the figure############  Add the points and the legend to the figure
             # Add the regular survey tows, note this if statement is used to NOT add the following code to these plots...
      
-            if(maps.to.make[m] %in% c("PR-spatial", "Rec-spatial", "FR-spatial",bin.names, "SH-spatial", "SH.GP-spatial","Clap-spatial", "Clap-abund-spatial"))
+            if(maps.to.make[m] %in% c("PR-spatial", "Rec-spatial", "FR-spatial",bin.names, "SH-spatial", "SH.GP-spatial","Clap-spatial", "Clap-abund-spatial") | 
+               maps.to.make[m] %in% c("MW.GP-spatial","MW-spatial","CF-spatial","MC-spatial") & banks[i] %in% c("Mid", "GB"))
             {
              surv <- st_as_sf(surv.Live[[banks[i]]],coords = c('lon','lat'),crs = 4326,remove=F) %>% 
                 dplyr::filter(year == yr & state == 'live')
@@ -1736,8 +1759,8 @@ for(fun in funs)
               p3 <- p2 + geom_sf(data=surv,aes(shape=`Tow type`),size=2) + scale_shape_manual(values = shp) + coord_sf(expand=F) +
                 theme(legend.key = element_rect(fill=NA))
             }
-            
-            if(maps.to.make[m] %in% c("MW.GP-spatial","MW-spatial","CF-spatial","MC-spatial"))
+
+            if(maps.to.make[m] %in% c("MW.GP-spatial","MW-spatial","CF-spatial","MC-spatial") & !banks[i] %in% c("Mid", "GB"))
             {
               #detailed_tows <- unique(mw[[banks[i]]][mw[[banks[i]]]$year==yr,]$tow)
               surv <- st_as_sf(unique(mw[[banks[i]]][mw[[banks[i]]]$year==yr,c("lon", "lat")]),coords = c('lon','lat'),crs = 4326)
@@ -1828,7 +1851,7 @@ for(fun in funs)
       # Use the cut out I make for the INLA models, it looks o.k.
       if(banks[i] %in% c("Mid","Ger")) shpf <- st_as_sf(bound.poly.surv.sp)
       if(banks[i] %in% c("Ger")) {
-        shpf_map <- st_read(paste0(gis.repo, "/Offshore/SFA26C.shp")) %>%
+        shpf_map <- st_read(paste0(gis.repo, "/survey_boundaries/Ger_east.shp")) %>%
           st_transform(32619)
         xmin_ger <- data.frame(x=rep(as.numeric(st_bbox(shpf)$xmin),2), 
                                y=c(as.numeric(st_bbox(shpf_map)$ymin), as.numeric(st_bbox(shpf_map)$ymax)))

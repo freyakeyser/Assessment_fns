@@ -26,7 +26,7 @@ options(tinytex.verbose = TRUE)
 
 year <- 2026
 
-load("summary.Rdata")
+load("summary2.Rdata")
 source(paste0(direct_fns, "/Other_functions/ScallopRound.R"))
 
 ntows <- summary_data$ntows
@@ -199,7 +199,7 @@ names(table) <- c("Size class", paste0(yeartable[yeartable$bank==params$bank, "l
 rownames(table) <- NULL
 
 kableExtra::kbl(table, booktabs = TRUE, escape =F, format='latex',
-  caption = "Number of scallop per standardized tow by size class, for the current survey, previous survey, and long term median.") %>%
+  caption = "Number of scallop per standardized tow by size class, for the current survey, previous survey, and long term median. Exploratory stations are not included in calculations.") %>%
   kableExtra::kable_styling(full_width = F) %>%
   kableExtra::kable_styling(full_width = F) %>%
   kableExtra::kable_styling(latex_options = "HOLD_position")
@@ -216,7 +216,7 @@ names(table) <- c("Size class", paste0(yeartable[yeartable$bank==params$bank, "l
 rownames(table) <- NULL
 
 kableExtra::kbl(table, booktabs = TRUE, escape =F, format='latex',
-  caption = "Kilograms (kg) of scallop per standardized tow by size class, for the current survey, previous survey, and long term median.") %>%
+  caption = "Kilograms (kg) of scallop per standardized tow by size class, for the current survey, previous survey, and long term median. Exploratory stations are not included in calculations.") %>%
   kableExtra::kable_styling(full_width = F) %>%
   kableExtra::kable_styling(full_width = F) %>%
   kableExtra::kable_styling(latex_options = "HOLD_position")
@@ -226,7 +226,7 @@ kableExtra::kbl(table, booktabs = TRUE, escape =F, format='latex',
 [Return to bank summary](#`r paste0(params$bank, "links")`)
 \newpage
 
-```{r, echo=FALSE, message=F, out.height="85%", fig.align="center", fig.cap=paste0("Abundance time series for ", bankname, " in ", year, ", represented by number of scallop per standardized tow (y-axis). Pre-recruits are shown in the top panel, recruit-sized scallop in the middle panel, and fully-recruited scallop are in the bottom panel. ", ltm_ts), warning=F}
+```{r, echo=FALSE, message=F, out.width="85%", fig.align="center", fig.cap=paste0("Abundance time series for ", bankname, " in ", year, ", represented by number of scallop per standardized tow (y-axis). Pre-recruits are shown in the top panel, recruit-sized scallop in the middle panel, and fully-recruited scallop are in the bottom panel.", ltm_ts, "  Exploratory stations are not included in calculations."), warning=F}
 knitr::include_graphics(paste0("C:/Users/keyserf/Documents/temp_data/", year, "/Presentations/Survey_summary/", params$bank, "/abundance_ts.png"))
 ```
 
@@ -234,7 +234,7 @@ knitr::include_graphics(paste0("C:/Users/keyserf/Documents/temp_data/", year, "/
 \newpage
 
 
-```{r, echo=FALSE, message=F, out.height="85%", fig.align="center", fig.cap=paste0("Biomass time series for ", bankname, " in ", year, ", represented by kilograms (kg) of scallop per standardized tow (y-axis). Pre-recruits are shown in the top panel, recruit-sized scallop in the middle panel, and fully-recruited scallop are in the bottom panel. ", ltm_ts), warning=F}
+```{r, echo=FALSE, message=F, out.width="85%", fig.align="center", fig.cap=paste0("Biomass time series for ", bankname, " in ", year, ", represented by kilograms (kg) of scallop per standardized tow (y-axis). Pre-recruits are shown in the top panel, recruit-sized scallop in the middle panel, and fully-recruited scallop are in the bottom panel. ", ltm_ts, "  Exploratory stations are not included in calculations."), warning=F}
 knitr::include_graphics(paste0("C:/Users/keyserf/Documents/temp_data/", year, "/Presentations/Survey_summary/", params$bank, "/biomass_ts.png"))
 ```
 
@@ -246,7 +246,7 @@ knitr::include_graphics(paste0("C:/Users/keyserf/Documents/temp_data/", year, "/
 
 For `r bankname` in `r year`, the size bin with the most scallop per tow was `r maxbin` mm (Figure `r fignum[4]`).
 
-```{r, echo=FALSE, message=F, out.height="80%", fig.align="center", fig.cap=paste0("Shell height frequencies of scallop on ", bankname, " in ", year, ". Vertical lines are the recruit size limits."), warning=F}
+```{r, echo=FALSE, message=F, out.width="80%", fig.align="center", fig.cap=paste0("Shell height frequencies of scallop on ", bankname, " in ", year, ". Vertical lines are the recruit size limits. Exploratory stations are not included in calculations."), warning=F}
 knitr::include_graphics(paste0("C:/Users/keyserf/Documents/temp_data/", year, "/Presentations/Survey_summary/", params$bank, "/SHF.png"))
 ```
 
@@ -260,7 +260,7 @@ On `r bankname` in `r year`, the empirical meat weight-shell height relationship
 
 <!-- \begin{landscape} -->
 
-```{r, echo=FALSE, message=F, out.height="70%", fig.align="center", fig.cap=paste0("Meat weights and shell heights for sampled tows on ", bankname, " in ", year, " (top). Red points represent individual scallops, red lines represent the trend for each sampled tow, and the solid blue line is the overall trend for the current survey. Condition factor (bottom) is measured as grams of meat per decimeter cubed, which can be thought of as the meat weight of a scallop with a shell height of 100mm. ", dashed), warning=F}
+```{r, echo=FALSE, message=F, out.width="65%", fig.align="center", fig.cap=paste0("Meat weights and shell heights for sampled tows on ", bankname, " in ", year, " (top). Red points represent individual scallops, red lines represent the trend for each sampled tow, and the solid blue line is the overall trend for the current survey. Condition factor (bottom) is measured as grams of meat per decimeter cubed, which can be thought of as the meat weight of a scallop with a shell height of 100mm. ", dashed, "  Exploratory stations are not included in calculations."), warning=F}
 knitr::include_graphics(paste0("C:/Users/keyserf/Documents/temp_data/", year, "/Presentations/Survey_summary/", params$bank, "/MWSH_and_CF_ts.png"))
 ```
 
@@ -281,14 +281,14 @@ names(table) <- c("Size class", paste0(yeartable[yeartable$bank==params$bank, "l
 rownames(table) <- NULL
 
 kableExtra::kbl(table, booktabs = TRUE, escape =F, format='latex',
-  caption = "Percentage of clappers per standardized tow by size class, for the current survey, previous survey, and long term median.") %>%
+  caption = "Percentage of clappers per standardized tow by size class, for the current survey, previous survey, and long term median. Exploratory stations are not included in calculations.") %>%
   kableExtra::kable_styling(full_width = F) %>%
   kableExtra::kable_styling(full_width = F) %>%
   kableExtra::kable_styling(latex_options = "HOLD_position")
 ```
 
 
-```{r, echo=FALSE, message=F, out.height="85%", fig.align="center", fig.cap=paste0("Clapper time series for ", bankname, " in ", year, ", represented by percentage of clappers per tow (y-axis). Pre-recruits are shown in the top panel, recruit-sized scallop in the middle panel, and fully-recruited scallop are in the bottom panel. ", ltm_ts), warning=F}
+```{r, echo=FALSE, message=F, out.width="85%", fig.align="center", fig.cap=paste0("Clapper time series for ", bankname, " in ", year, ", represented by percentage of clappers per tow (y-axis). Pre-recruits are shown in the top panel, recruit-sized scallop in the middle panel, and fully-recruited scallop are in the bottom panel. ", ltm_ts, "  Exploratory stations are not included in calculations."), warning=F}
 knitr::include_graphics(paste0("C:/Users/keyserf/Documents/temp_data/", year, "/Presentations/Survey_summary/", params$bank, "/Clapper_per_ts.png"))
 ```
 
@@ -322,7 +322,7 @@ spatial.stats.detail <- rbind(spatial.stats.detail, mc)
 
 **Pre-recruit, recruit, and fully-recruited abundance:**
 
-The spatial distributions of pre-recruit, recruit, and fully-recruited scallop are shown in Figures `r fignum[7]` - `r fignum[9]`, and statistical summaries are in Table `r tabnum[4]`. Maps are based on a geostatistical model that uses a Gaussian Markov Random Field (GMRF) to predict the spatial distribution. These models may not represent the full range of values observed during the survey.
+The spatial distributions of pre-recruit, recruit, and fully-recruited scallop are shown in Figures `r fignum[7]` - `r fignum[9]`, and statistical summaries are in Table `r tabnum[4]`. Maps are based on a geostatistical model that uses a Gaussian Markov Random Field (GMRF) to predict the spatial distribution. These models may not represent the full range of values observed during the survey. 
 
 ```{r, echo=F, warning=F}
 table <- spatial.stats.abund
@@ -331,7 +331,7 @@ table$`Size class` <- c(paste0("Pre-recruits (<", sizes$RS[sizes$bank==params$ba
                     paste0("Fully-recruited ($\\geq$", sizes$CS[sizes$bank==params$bank]$size, "mm)"))
 
 kableExtra::kbl(table, booktabs = TRUE, escape =F, format='latex',
-  caption = "Summary statistics for tow abundance by size class, for the current survey.") %>%
+  caption = "Summary statistics for tow abundance by size class, for the current survey. Statistics exclude exploratory stations.") %>%
   kableExtra::kable_styling(full_width = F) %>%
   kableExtra::kable_styling(full_width = F) %>%
   kableExtra::kable_styling(latex_options = "HOLD_position")
@@ -368,7 +368,7 @@ The spatial distribution of condition factor is shown in Figure `r fignum[10]`, 
 ```{r, echo=F, warning=F}
 table <- spatial.stats.detail
 
-knitr::kable(table, format = "latex", row.names=F, booktabs=T, caption="Summary statistics for condition factor and meat count for the current survey.") %>%
+knitr::kable(table, format = "latex", row.names=F, booktabs=T, caption="Summary statistics for condition factor and meat count for the current survey. Statistics exclude exploratory stations.") %>%
   kableExtra::kable_styling(latex_options = "HOLD_position")
 
 ```
@@ -403,7 +403,7 @@ knitr::include_graphics(paste0("C:/Users/keyserf/Documents/temp_data/", year, "/
 
 Figure `r fignum[13]` provides an overview of the relationship between biomass, meat count, and shell height, by showing the biomass for each shell height bin and the meat count for each shell height bin. Scallop with shell heights of `r highlights$thisyear[highlights$variable=="sh_for_mcreg" & highlights$bank==params$bank]` mm and above at the time of the survey would result in meat counts at or below the regulation (`r sizes$mc[sizes$bank==params$bank]$size`).
 
-```{r, echo=FALSE, message=F, out.height="70%", fig.align="center", fig.cap = paste0("The relationship between biomass and meat count for ", bankname, " in ", year, ". Shell height (5 mm bins) is on the x-axis. Meat count is on the y-axis in the top panel. The solid red line is the estimated meat count for each shell height bin. Biomass (kilograms per standardized tow, kg/tow) is on the y-axis in the bottom panel. The dashed red lines delineate the size range at which you would have a meat count of ", sizes$mc[sizes$bank==params$bank]$size, " or below. The blue vertical lines represent the recruit size range."), warning=F}
+```{r, echo=FALSE, message=F, out.width="70%", fig.align="center", fig.cap = paste0("The relationship between biomass and meat count for ", bankname, " in ", year, ". Shell height (5 mm bins) is on the x-axis. Meat count is on the y-axis in the top panel. The solid red line is the estimated meat count for each shell height bin. Biomass (kilograms per standardized tow, kg/tow) is on the y-axis in the bottom panel. The dashed red lines delineate the size range at which you would have a meat count of ", sizes$mc[sizes$bank==params$bank]$size, " or below. The blue vertical lines represent the recruit size range. Exploratory stations are not included in calculations."), warning=F}
 knitr::include_graphics(paste0("C:/Users/keyserf/Documents/temp_data/", year, "/Presentations/Survey_summary/", params$bank, "/breakdown-",year, ".png"))
 ```
 

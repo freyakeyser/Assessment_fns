@@ -6,9 +6,9 @@ source("C:/Users/keyserf/Documents/Github/Assessment_fns/Survey_and_OSAC/olex_ch
 #rbind track files (.log) in a directory and add tow
 
 
-file.locs <- readxl::read_xlsx("Y:/Offshore/Assessment/Data/2026/Temperature/LE23/logbook_locations__and_offsets_2018_2026.xlsx",sheet=1)
+file.locs <- readxl::read_xlsx("Y:/Offshore/Assessment/Data/Survey_data/2026/Temperature/LE24/logbook_locations__and_offsets_2018_2026.xlsx",sheet=1)
 
-file.locs <- file.locs[file.locs$Year==2026,]
+file.locs <- file.locs[file.locs$Year==2026 & file.locs$Bank %in% c("GBa", "GBb"),]
 
 # Now we do the analysis, going one row at a time.
 tow.data <- NULL
@@ -65,8 +65,8 @@ for(i in 1:nrow(file.locs))
 # tow.data[[32]]$end_atz[5:15] <- tow.data[[32]]$end_atz[5:15] + lubridate::days(1)
 
 # Save this because it takes forever to run!
-#saveRDS(tow.data,file="Y:/Offshore/Assessment/2026/Supporting_tasks/temperature/Tow_locations_and_time.Rds")
-tow.data <- readRDS(file="Y:/Offshore/Assessment/Data/2026/Temperature/LE23/Tow_locations_and_time.Rds")
+#saveRDS(tow.data,file="Y:/Offshore/Assessment/Data/Survey_data/2026/Temperature/LE24/Tow_locations_and_time.Rds")
+tow.data <- readRDS(file="Y:/Offshore/Assessment/Data/Survey_data/2026/Temperature/LE24/Tow_locations_and_time.Rds")
 
 #Checking if the tow numbers are in chronological order
 
@@ -76,7 +76,7 @@ temperature.path <- "Y:/Offshore/Assessment/Data/Survey_data/"
 temp.dat <- NULL
 for(y in yrs)
 {
-  temp.temp.files <- list.files(path= paste0(temperature.path,y,"/Temperature/"),pattern = ".csv",full=T)
+  temp.temp.files <- list.files(path= paste0(temperature.path,y,"/Temperature/LE24"),pattern = ".csv",full=T)
   n.files <- length(temp.temp.files)
   # Read in the temperature data
   temp.temp.dat <- NULL
@@ -93,9 +93,9 @@ temperature.data <- do.call("rbind",temp.dat)
 names(temperature.data) <- c("date","time","t_deg_c")
 temperature.data$time <- ymd_hms(paste(temperature.data$date,temperature.data$time),tz = "Canada/Atlantic")
 # This also takes a minute remotely, so save this crap
-#saveRDS(temperature.data,file="Y:/Offshore/Assessment/2026/Supporting_tasks/temperature/all_temp_data.Rds")
+#saveRDS(temperature.data,file="Y:/Offshore/Assessment/Data/Survey_data/2026/Temperature/LE24/all_temp_data.Rds")
 
-temperature.data <- readRDS(file="Y:/Offshore/Assessment/Data/2026/Temperature/LE23/all_temp_data.Rds")
+temperature.data <- readRDS(file="Y:/Offshore/Assessment/Data/Survey_data/2026/Temperature/LE24/all_temp_data.Rds")
 #write.csv(temperature.data,"D:/testing_folder/Model_testing/Data/temperature_data.csv") # There is too much data for excel!
 
 
@@ -150,21 +150,21 @@ ggplot(temp.res) + geom_text(aes(x=year,y=temperature,label=tow),size=4) + facet
 
 #showtext_auto(enable = FALSE)
 
-png("Y:/Offshore/Assessment/Data/2026/Temperature/LE23/temperature_plot.png", width=15, height=5,units="in", res=400)
-print(ggplot() + geom_point(data=temp.res, aes(ymd_hms(start_atz), temperature)) +
+png("Y:/Offshore/Assessment/Data/Survey_data/2026/Temperature/LE24/temperature_plot.png", width=15, height=5,units="in", res=400)
+print(ggplot() + geom_text(data=temp.res, aes(ymd_hms(start_atz), temperature, label=tow)) +
   geom_line(data=temp.res, aes(ymd_hms(start_atz), temperature, group=1)) +
-  facet_wrap(~bank, scale="free"))
+  facet_wrap(~bank, scale="free", ncol=1))
 dev.off()
 
 
 
 
-#write.csv(temp.res,"Y:/Offshore/Assessment/2026/Supporting_tasks/temperature/cleaned_temperature_data_2026.csv")
-temp.res <- read.csv("Y:/Offshore/Assessment/Data/2026/Temperature/LE23/cleaned_temperature_data_2026.csv")
+#write.csv(temp.res,"Y:/Offshore/Assessment/Data/Survey_data/2026/Temperature/LE24/cleaned_temperature_data_2026.csv")
+temp.res <- read.csv("Y:/Offshore/Assessment/Data/Survey_data/2026/Temperature/LE24/cleaned_temperature_data_2026.csv")
 
 
 # Load in the entire dataset which I cleaned up externally.  The 2015-2017 data was pulled from the Database and cleaned seperately as well.
-write.csv(x = temp.res,"Y:/Offshore/Assessment/Data/2026/Temperature/LE23/cleaned_temperature_data_2026.csv")
+write.csv(x = temp.res,"Y:/Offshore/Assessment/Data/Survey_data/2026/Temperature/LE24/cleaned_temperature_data_2026.csv")
 
 ggplot(temp.res) + geom_text(aes(x=year,y=temperature,label=tow),size=4) + facet_wrap(~bank)
 

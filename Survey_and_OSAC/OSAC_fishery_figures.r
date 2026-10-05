@@ -185,6 +185,7 @@ for(fun in funs)
       
       # Get the survey boundary polygon for the bank 
       bnk.sfa.poly <- subset(sfa.polys,bank==bnk[i])
+      if(bnk[i]=="Mid") bnk.sfa.poly <- sfa.polys[sfa.polys$bank=="Sab",]
 
       # discovered in 2021 that german was being clipped to the detailed polygon. Stole this code from survey summary figures_sf to get boundary
       # if(bnk[i] == "Ger" & yr>2020) {
@@ -212,6 +213,7 @@ for(fun in funs)
         
       # Set the levels, might need to think a bit about these!
       lvls=lvl
+      
       #Get the total removals from each 1 minute cell within the bank for the levels (10 kg to 50 tonnes!)
       bnk.polys <- gridPlot(bnk.fish.dat,bnk.sfa.poly,lvls,border=poly.brd,FUN=fun,grid.size=grids)
       

@@ -1,6 +1,6 @@
 --- 
 title: "Offshore Scallop Survey Summary"
-subtitle: "Spring & Summer 2025"
+subtitle: "Spring & Summer 2026"
 author: "Scallop and Benthic Habitat Unit"
 output: 
   officedown::rdocx_document
@@ -10,10 +10,12 @@ editor_options:
 
 ```{r, echo=F, message=F, warning=F}
 require(lubridate)
-load("summary4.Rdata")
+load("C:/Users/keyserf/Documents/Github/Assessment_fns/Survey_and_OSAC/bookdown_report/summary4.Rdata")
 
-dates <- summary_data$dates[summary_data$dates$bank %in% c("Mid", "Sab", "Ger", "BBs",
+dates <- summary_data$dates[summary_data$dates$bank %in% c( 
+  "Ger",
           "BBn", "GBa", "GBb"),]
+ #"BBs",#"Mid", "Sab",
 ```
 
 

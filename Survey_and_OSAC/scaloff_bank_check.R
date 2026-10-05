@@ -335,7 +335,7 @@ Check the MGT_AREA_CD values for the following tows:")
         tows[,c("START_LAT","START_LON", "END_LAT", "END_LON")] <- apply(tows[,c("START_LAT","START_LON", "END_LAT", "END_LON")], 2, function(x) as.numeric(as.character(x)))
         
       }
-      
+     
       # check values in coordinates
       if(is.numeric(tows$START_LAT) & is.numeric(tows$START_LON) & is.numeric(tows$END_LAT) & is.numeric(tows$END_LON) &
          any(tows[,c("START_LAT","END_LAT")] > 4730 | tows[,c("START_LAT", "END_LAT")] < 4100, na.rm=T)){
@@ -350,6 +350,34 @@ Check the MGT_AREA_CD values for the following tows:")
         
       }
       
+      # disallow values such as 4160.00 and 6560.00
+      start_lon_minute <- substr(x = tows$START_LON, start=4, stop=5)
+      start_lon_minute <- tows[which(start_lon_minute==60),]
+      if(nrow(start_lon_minute)>0) {
+        message("60 minutes in START_LON for following tow records:")
+        print(start_lon_minute)
+      }
+      
+      start_lat_minute <- substr(x = tows$START_LAT, start=3, stop=4)
+      start_lat_minute <- tows[which(start_lat_minute==60),]
+      if(nrow(start_lat_minute)>0) {
+        message("60 minutes in START_LAT for following tow records:")
+        print(start_lat_minute)
+      }
+      
+      end_lon_minute <- substr(x = tows$END_LON, start=4, stop=6)
+      end_lon_minute <- tows[which(end_lon_minute==60),]
+      if(nrow(end_lon_minute)>0) {
+        message("60 minutes in END_LON for following tow records:")
+        print(end_lon_minute)
+      }
+      
+      end_lat_minute <- substr(x = tows$END_LAT, start=3, stop=4)
+      end_lat_minute <- tows[which(end_lat_minute==60),]
+      if(nrow(end_lat_minute)>0) {
+        message("60 minutes in END_LAT for following tow records:")
+        print(end_lat_minute)
+      }
       # spatial check coordinates relative to mgt_area_cd shapefile. Make plots. This is adapted from check.tows.spatial.R which is used for Inshore Survey. 
       
       # converting all lats and longs to decimal degrees
@@ -491,6 +519,17 @@ Check the MGT_AREA_CD values for the following tows:")
             message("bearings mismatch between olex and tow file. review the following tows:")  
             print(compare[which(compare$bearing-compare$BEARING >1),])
           }
+          
+          # make sure all bearings are between 1 and 360 (0 is not allowed)
+          if(any(tows$BEARING==0)) {
+            message("The following tows have a bearing of 0, which is not allowed")
+            print(tows[tows$BEARING==0,])
+          }
+          if(any(tows$BEARING<1 | tows$BEARING>360)) {
+            message("The following tows have a bearing outside the range of 1-360, which is not allowed")
+            print(tows[tows$BEARING<1 & tows$BEARING>360,])
+          }
+          
           if(all(compare$dis_coef - compare$DIS_COEF < 0.001)) message("distance coefficients match between olex and tow file")  
           if(any(compare$dis_coef - compare$DIS_COEF > 0.001)) {
             message("distance coefficient mismatch between olex and tow file. review the following tows:")  
@@ -510,7 +549,7 @@ Check the MGT_AREA_CD values for the following tows:")
         #assign to strata
         if(assign.strata==TRUE & bank %in% c("Sab", "BBn", "BBs", "GBa", "GBb")){
           shp <- github_spatial_import(subfolder = "offshore_survey_strata", zipname = "offshore_survey_strata.zip",quiet = T, specific_shp = paste0(bank,".shp"))
-          shp <- st_make_valid(shp)
+          #shp <- st_make_valid(shp) # this seems to break something!
           if(bank %in% c("Sab","BBs")) CRS <- 32620
           if(!bank %in% c("Sab","BBs")) CRS <- 32619
           tows_sf <- st_intersection(st_transform(tows_sf, CRS), st_transform(shp, CRS)) %>% 
@@ -801,6 +840,15 @@ Check the MGT_AREA_CD values for the following tows:")
         if(any(!unique(mwshs$SAMPLER_ID) %in% paste0(samplers$SAMPLER_ID, " - ", samplers$SAMPLER_NAME))) {
           message("SAMPLER_ID not found in SCALOFF database. CSV contains following IDs: ")
           message(c(unique(mwshs$SAMPLER_ID)))
+        }
+      }
+      
+      # make sure sample numbers are sequential and check tow numbers
+      for(i in unique(mwshs$TOW_NUM)){
+        temp <- mwshs[mwshs$TOW_NUM==i,]
+        if(!all(temp$SCALLOP_NUM == 1:length(temp$SCALLOP_NUM))) {
+          message("The MWSH scallop numbers are out of order for the following tows:")
+          print(temp[,c("TOW_NUM", "SCALLOP_NUM")])
         }
       }
       

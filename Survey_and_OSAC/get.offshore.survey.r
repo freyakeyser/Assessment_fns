@@ -270,7 +270,7 @@ for(fun in funs)
     # add the empty tows back in
     industryreport <- join(industryreport, unique(surv_tows_samp[, c("SURVEY_NAME", "MGT_AREA_CD", "TOW_NO", "TOW_TYPE_ID", "START_LAT", "START_LON", "END_LAT", "END_LON", "DEPTH_F","SPECIES_ID")]), type="full")
     
-    industryreport <- select(arrange(industryreport, SURVEY_NAME, SPECIES_ID, TOW_NO), SURVEY_NAME, MGT_AREA_CD, TOW_NO, TOW_TYPE_ID, START_LAT, START_LON, END_LAT, END_LON, DEPTH_F, SPECIES_ID, catchbaskets, `L_0-70`, `L_70-100`, `L_100+`, `D_0-70`, `D_70-100`, `D_100+`)
+    industryreport <- dplyr::select(arrange(industryreport, SURVEY_NAME, SPECIES_ID, TOW_NO), SURVEY_NAME, MGT_AREA_CD, TOW_NO, TOW_TYPE_ID, START_LAT, START_LON, END_LAT, END_LON, DEPTH_F, SPECIES_ID, catchbaskets, `L_0-70`, `L_70-100`, `L_100+`, `D_0-70`, `D_70-100`, `D_100+`)
     
     industryreport[is.na(industryreport)] <- 0
     

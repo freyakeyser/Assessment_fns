@@ -9,9 +9,9 @@ yr <- 2024
 
 tows <- surv.dat[[bank]][surv.dat[[bank]]$year==yr & surv.dat[[bank]]$state=="live", which(names(surv.dat[[bank]]) %in% c("year", "tow", "cruise", "bank", "Strata_ID", "Strata_ID_new", "slon", "slat", "elon", "elat"))]
 
-sheets <- readxl::excel_sheets("Y:/Offshore/Survey/SurveyWG/2024/LE20SurveyStations2024_GBa.xlsx")
+sheets <- readxl::excel_sheets("Y:/Offshore/Survey/SurveyWG/2026/LE24SurveyStations2024_GBa.xlsx")
 
-planned <- readxl::read_excel("Y:/Offshore/Survey/SurveyWG/2024/LE20SurveyStations2024_GBa.xlsx", sheet = "LE20stationsGBa2024")
+planned <- readxl::read_excel("Y:/Offshore/Survey/SurveyWG/2026/LE20SurveyStations2024_GBa.xlsx", sheet = "LE20stationsGBa2024")
 
 if(bank == "GBb") {
   #planned$Strata_ID <- planned$Strata_ID+100

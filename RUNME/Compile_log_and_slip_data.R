@@ -16,7 +16,7 @@ for(fun in funs)
 }
 
 # to export csv (adjust years to whatever you want):
-logs_and_fish(loc="offshore", year=2009:2019, get.marfis = F, export = T, direct = direct)
+logs_and_fish(loc="offshore", year=2025:2026, get.marfis = T, export = T, direct = direct)
 
 # CSV will be stored here: 
 paste0(direct,"Data/Fishery_data/Logs/Compiled/")

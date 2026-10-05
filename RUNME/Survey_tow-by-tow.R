@@ -30,13 +30,14 @@ source(paste(direct_fns,"Maps/ScallopMap.r",sep=""))
 source(paste(direct_fns,"Maps/pectinid_projector_sf.r",sep=""))
 # You may need to reload your R profile if you use it...
 #source("d:/r/.Rprofile")
-bnk <- c("GBa","GBb")# Once we have spring 2016 survey completed we should be able to add "Sab","BBs","Mid".
-#bnk <- c("BBn",
- # "Ger",
+bnk <- c("GBa","GBb",# Once we have spring 2016 survey completed we should be able to add "Sab","BBs","Mid".
+#bnk <- c(
+"BBn",
+"Ger",
  # "Sab",
  # "Mid",
  # "BBs",
- # "GB"#,#, "Ban", "BanIce"
+"GB")#,#, "Ban", "BanIce"
   #   "GBa", 
   # "GBb"
 #)

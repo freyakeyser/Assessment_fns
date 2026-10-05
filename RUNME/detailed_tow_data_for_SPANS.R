@@ -1,14 +1,14 @@
 # For Detailed Tow Data (for SPANS, usually right after Industry report)
 year<- 2026
-DR <- "DR2026_09_Detailed_Spring"
+DR <- "DR2026_12_Detailed_Summer"
 direct <- "C:/Users/keyserf/Documents/temp_data"
-load(paste0(direct, "/Data/Survey_data/", year, "/Survey_summary_output/testing_results_spring2026.Rdata"))
+load(paste0(direct, "/Data/Survey_data/", year, "/Survey_summary_output/testing_results_summer2026.Rdata"))
 
 #banks <- names(survey.obj)
-banks <- c("GB", "BBn", "Ger")#"BBs", "Sab", "Mid", 
+#banks <- c("GB", "BBn", "Ger")#"BBs", "Sab", "Mid", 
 banks <- c("GBa", "GBb")
 
-cruises <- c("GB", "BB", "GER") #"SAB", "MID", 
+#cruises <- c("GB", "BB", "GER") #"SAB", "MID", 
 cruises <- c("GBa", "GBb")
 #cruises <- c("GBa", "GBb", "BB")
 

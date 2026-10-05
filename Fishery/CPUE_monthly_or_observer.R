@@ -64,6 +64,8 @@ CPUE.mon <- function(CPUE = "month", bank = NULL, year = as.numeric(format(Sys.D
   require(splancs)  || stop("You need the package splancs... thanks")
   require(RODBC) || stop("Package RODBC cannot be found")
   require(plyr)
+  require(tidyverse)
+  require(dplyr)
   require(lubridate)
   
   if(missing(direct_fns)) {

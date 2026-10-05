@@ -204,7 +204,7 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
   require(s2) || stop ("Please install s2 so you can tidy up any crappy geography. Note, you may also need to update sf")
   require(purrr) || stop ("Please install purrr so you can make cool axes tick marks")
   require(tidyverse) ||stop ("Please install some tidyverse packaage that has mutate so you can make cool axes tick marks")
-  if(length(add_inla) > 0) require(INLA) || stop ("If you want to run INLA model output, might help to install the INLA packages!!")
+  #if(length(add_inla) > 0) require(INLA) || stop ("If you want to run INLA model output, might help to install the INLA packages!!")
   if(plot_as != 'ggplot') require(ggthemes) ||stop ("Please install ggspatial which is needed for the map theme for plotly")
   if(plot_as != 'ggplot') require(plotly) || stop ("Please install plotly if you want an interactive plot")
   
@@ -1004,7 +1004,7 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
       ypad <- as.numeric(add_layer$scale.bar[4])
     } 
   }
-  
+
   # If we have a field to plot, i.e. an INLA object and mesh, in here we convert it from a raster to an spatial DF in SF and then we plots it.
   if(!is.null(add_inla$field) && !is.null(add_inla$mesh))
   {
@@ -1049,6 +1049,7 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
         inla.field = inla.mesh.project(projec, add_inla$field)
       }
     }
+ 
     # If the above step has already happened (this is mostly for backwards compatibility with old code)....
     if(!class(add_inla$mesh)=="sdmTMBmesh") {
       if(add_inla$mesh$n != length(add_inla$field)) {
@@ -1060,16 +1061,18 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
     if(class(add_inla$mesh)=="sdmTMBmesh") {
       inla.field <- add_inla$field
       raster <- inla.field[,c("X", "Y", "est")]
-      raster <- rasterFromXYZ(raster)
+      spd <- raster::rasterFromXYZ(raster, crs = add_inla$mesh$crs)
     }
     
     # To convert a raster to a spatial polygon.is easy..
-    sp.field <- as(raster, "SpatialPolygonsDataFrame") #10s
-    proj4string(sp.field) <- add_inla$mesh$crs # For SP need that gross full crs code, so this...
+    # sp.field <- as(raster, "SpatialPolygonsDataFrame") #10s
+    # proj4string(sp.field) <- add_inla$mesh$crs # For SP need that gross full crs code, so this...
     # Make it an sf object
-    spd <- st_as_sf(sp.field,as_points=F,merge=F) #10s
+    #spd <- stars::st_as_stars(raster)
+    
+    # spd <- st_as_sf(sp.field,as_points=F,merge=F) #10s
     # Now we need to convert to the coordinate system you want
-    spd <- st_transform(spd,crs = c_sys)
+    #spd <- st_transform(spd,crs = c_sys)
     # If you want to clip the data to some coordinates/shape this is where that happens.
     if(!is.null(add_inla$clip))
     {
@@ -1088,8 +1091,10 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
       # Now we want to transform to the correct coordinate system, I'm assuming the above will all have a CRS.
       clip <- st_transform(clip,crs = c_sys)
       # And clip the spd to the region you want.
-      spd <- st_intersection(spd,st_make_valid(clip))
+      spd <- mask(spd,st_make_valid(clip))
+      spd <- na.omit(spd)
     } # end  if(!is.null(add_inla$clip))
+    spd <- stars::st_as_stars(spd)
     # Now to make the colour ramps...
     # First I'll make a couple of generic colour ramps 
     #I'll set one up using 100 colours and a maximium of 10 breaks, break locations based on the data.
@@ -1161,7 +1166,7 @@ pecjector = function(gg.obj = NULL,plot_as = "ggplot" ,area = list(y = c(40,46),
     if(exists("bathy.gg") & exists("bathy.smooth")) pect_plot <- pect_plot + geom_contour(data=bathy.gg, aes(x=x, y=y, z=layer), colour="azure2", alpha=0.35, breaks=bathy.breaks)  
     if(exists("bathy.scallopmap")) pect_plot <- pect_plot + geom_sf(data=bathy.scallopmap, colour="lightblue")  
     if(exists("sfc")) pect_plot <- pect_plot + new_scale("fill") + geom_sf(data=spd, aes(fill=layer), colour = NA) + sfc 
-    if(exists("sfd")) pect_plot <- pect_plot + new_scale("fill") + geom_sf(data=spd, aes(fill=brk), colour = NA)  + sfd  
+    if(exists("sfd")) pect_plot <- pect_plot + new_scale("fill") + geom_stars(data=spd, aes(fill=brk), na.action = na.omit, na.omit=T) + sfd  
     # If we have custom fancy plots we add these here
     if(exists("cfc")) pect_plot <- pect_plot + new_scale("fill") + geom_sf(data=custom, aes(fill=layer), colour = NA) + cfc 
     if(exists("cfd")) pect_plot <- pect_plot + new_scale("fill") + geom_sf(data=custom, aes(fill=brk), colour = NA)  + cfd  

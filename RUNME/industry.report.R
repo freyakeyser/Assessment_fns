@@ -23,7 +23,7 @@ require(dplyr)
 require(ggplot2)
 
 # scaloff username and pwd needed (keyserf doesn't have the right access)
-indreport <- get.offshore.survey(direct=direct, cruise="LE17", yr=2023, industry.report = T, un = "scaloff", pw=pwd.id)
+indreport <- get.offshore.survey(direct=direct, cruise="LE24", yr=2026, industry.report = T, un = "scaloff", pw=pwd.id)
 
 
 industryreport <- indreport$industryreport
@@ -53,7 +53,7 @@ for(i in 1:length(unique(industryreport$MGT_AREA_CD))){
       
 }
 
-sum(df[[1]]$total) + sum(df[[2]]$total) + sum(df[[3]]$total)+ sum(df[[4]]$total) + sum(df[[5]]$total)  + sum(df[[6]]$total)  + sum(df[[7]]$total) 
+sum(df[[1]]$total) + sum(df[[2]]$total) #+ sum(df[[3]]$total)+ sum(df[[4]]$total) + sum(df[[5]]$total)  + sum(df[[6]]$total)  + sum(df[[7]]$total) 
 
 df
 
